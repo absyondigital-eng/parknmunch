@@ -3,5 +3,8 @@
   functions = "netlify/functions"
   command   = "npm install"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "Supabase_Anon_Key"
+
 [dev]
   port = 8888
