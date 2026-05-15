@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     orderGrid.querySelectorAll('.add-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id   = parseInt(btn.dataset.id);
+        const id   = btn.dataset.id;
         const item = MENU.find(m => m.id === id);
         if (!item) return;
         if (item.category === 'burgers') {
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function updateAddButtons() {
     document.querySelectorAll('.add-btn').forEach(btn => {
-      const id   = parseInt(btn.dataset.id);
+      const id   = btn.dataset.id;
       const item = MENU.find(m => m.id === id);
       if (!item || item.category === 'burgers' || item.isGarage || item.hasDrinkChoice) {
         btn.innerHTML = '<span>+</span> Add to Cart';
@@ -572,7 +572,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     gmBody.querySelectorAll('.gm-inc').forEach(btn => {
       btn.addEventListener('click', () => {
         if (garageTotal() >= 3) return;
-        const id   = parseInt(btn.dataset.id);
+        const id   = btn.dataset.id;
         const item = MENU.find(m => m.id === id);
         const sel  = garageSelection.find(s => s.item.id === id);
         if (sel) { sel.qty++; } else { garageSelection.push({ item, qty: 1, style: item.hasStyle ? 'Normal' : null }); }
@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     gmBody.querySelectorAll('.gm-dec').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id  = parseInt(btn.dataset.id);
+        const id  = btn.dataset.id;
         const sel = garageSelection.find(s => s.item.id === id);
         if (!sel) return;
         sel.qty--;
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     gmBody.querySelectorAll('input[type="radio"]').forEach(radio => {
       radio.addEventListener('change', () => {
-        const id  = parseInt(radio.name.replace('gm-style-', ''));
+        const id  = radio.name.replace('gm-style-', '');
         const sel = garageSelection.find(s => s.item.id === id);
         if (sel) sel.style = radio.value;
       });
@@ -631,17 +631,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (cpBack)      cpBack.addEventListener('click', closeCheckout);
 
   /* ---- UPSELL MODAL ---- */
-  // Ordered by value: shakes → cake → protein → fries
-  const UPSELL_IDS     = [23, 24, 30, 22, 19, 20, 31, 21]; // shakes (no Ferrero) → cake → protein → fries
+  const UPSELL_CATS    = ['milkshakes', 'cakes'];
   const upsellOverlay  = document.getElementById('upsellOverlay');
   const umItemsEl      = document.getElementById('umItems');
   const umContinueBtn  = document.getElementById('umContinue');
   const umCloseBtn     = document.getElementById('umClose');
 
   function openUpsellModal() {
-    const suggestions = UPSELL_IDS
-      .map(id => MENU.find(m => m.id === id))
-      .filter(item => item && !cart.some(e => e.item.id === item.id));
+    const suggestions = MENU
+      .filter(item => UPSELL_CATS.includes(item.category) && !cart.some(e => e.item.id === item.id));
 
     if (!suggestions.length) { openCheckout(); return; }
 
@@ -662,7 +660,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     umItemsEl.querySelectorAll('.um-item').forEach(card => {
       const addFn = () => {
         if (card.classList.contains('added')) return;
-        const id   = parseInt(card.dataset.id);
+        const id   = card.dataset.id;
         const item = MENU.find(m => m.id === id);
         if (!item) return;
         if (item.hasDrinkChoice) {

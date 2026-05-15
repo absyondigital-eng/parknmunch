@@ -16,6 +16,8 @@
 
   const db = window.supabase.createClient(url, key);
 
+  const CATEGORY_ORDER = ['burgers', 'box-deals', 'loaded-fries', 'wraps', 'milkshakes', 'cakes', 'sides', 'kids'];
+
   /* ── Convert a products row into the shape order.js expects ── */
   function rowToItem(p) {
     const mods = p.modifiers || {};
@@ -37,13 +39,20 @@
 
   /* ── Rebuild global MENU and POPULAR_IDS from fetched rows ── */
   function applyProducts(rows) {
-    const items = rows.map(rowToItem);
+    const sorted = [...rows].sort((a, b) => {
+      const ai = CATEGORY_ORDER.indexOf(a.category);
+      const bi = CATEGORY_ORDER.indexOf(b.category);
+      const catDiff = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      if (catDiff !== 0) return catDiff;
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    });
+    const items = sorted.map(rowToItem);
     MENU.length = 0;
     items.forEach(i => MENU.push(i));
     POPULAR_IDS.length = 0;
     rows
       .filter(p => p.popular)
-      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+      .sort((a, b) => (a.popular_order || 999) - (b.popular_order || 999))
       .forEach(p => POPULAR_IDS.push(p.id));
   }
 

@@ -7,14 +7,16 @@ import { resolveImageUrl } from '../../lib/imageUrl'
 
 const CATEGORY_CONFIG = {
   burgers:       { emoji: '🍔', label: 'Burgers' },
-  wraps:         { emoji: '🌯', label: 'Wraps' },
-  'loaded-fries':{ emoji: '🍟', label: 'Loaded Fries' },
   'box-deals':   { emoji: '📦', label: 'Munchboxes' },
-  sides:         { emoji: '🍗', label: 'Sides' },
-  cakes:         { emoji: '🍰', label: 'Cakes' },
+  'loaded-fries':{ emoji: '🍟', label: 'Loaded Fries' },
+  wraps:         { emoji: '🌯', label: 'Wraps' },
   milkshakes:    { emoji: '🥤', label: 'Milkshakes' },
+  cakes:         { emoji: '🍰', label: 'Cakes' },
+  sides:         { emoji: '🍗', label: 'Sides' },
   kids:          { emoji: '🧒', label: 'Kids' },
 }
+
+const CATEGORY_SORT_ORDER = ['burgers', 'box-deals', 'loaded-fries', 'wraps', 'milkshakes', 'cakes', 'sides', 'kids']
 
 function getCatEmoji(cat) {
   return (CATEGORY_CONFIG[(cat || '').toLowerCase()] || {}).emoji || '🍽️'
@@ -129,7 +131,12 @@ export default function MenuPage() {
   const [editProduct, setEditProduct] = useState(undefined)
 
   const categories = useMemo(() => {
-    return [...new Set(products.map((p) => p.category).filter(Boolean))].sort()
+    const found = [...new Set(products.map((p) => p.category).filter(Boolean))]
+    return found.sort((a, b) => {
+      const ai = CATEGORY_SORT_ORDER.indexOf(a)
+      const bi = CATEGORY_SORT_ORDER.indexOf(b)
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    })
   }, [products])
 
   const filtered = useMemo(() => {

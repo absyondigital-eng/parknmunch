@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+const ADMIN_CATEGORY_ORDER = ['burgers', 'box-deals', 'loaded-fries', 'wraps', 'milkshakes', 'cakes', 'sides', 'kids']
+
+function sortProducts(list) {
+  return [...list].sort((a, b) => {
+    const ai = ADMIN_CATEGORY_ORDER.indexOf(a.category)
+    const bi = ADMIN_CATEGORY_ORDER.indexOf(b.category)
+    const catDiff = (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+    if (catDiff !== 0) return catDiff
+    const sdiff = (a.sort_order || 0) - (b.sort_order || 0)
+    if (sdiff !== 0) return sdiff
+    return a.name.localeCompare(b.name)
+  })
+}
+
 export function useProducts() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,12 +28,11 @@ export function useProducts() {
       const { data, error: fetchError } = await supabase
         .from('products')
         .select('*')
-        .order('category',   { ascending: true })
         .order('sort_order', { ascending: true })
         .order('name',       { ascending: true })
 
       if (fetchError) throw fetchError
-      setProducts(data || [])
+      setProducts(sortProducts(data || []))
     } catch (err) {
       console.error('Failed to fetch products:', err)
       setError(err.message || 'Failed to load products')
@@ -38,11 +51,7 @@ export function useProducts() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'products' },
         (payload) => {
-          setProducts((prev) => [...prev, payload.new].sort((a, b) =>
-            a.category.localeCompare(b.category) ||
-            (a.sort_order - b.sort_order) ||
-            a.name.localeCompare(b.name)
-          ))
+          setProducts((prev) => sortProducts([...prev, payload.new]))
         }
       )
       .on(
