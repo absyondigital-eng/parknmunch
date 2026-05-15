@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+admin/node_modules/
+
+# Build output
+admin/dist/
+
+# Environment files (contain secret keys)
+admin/.env
+.env
+
+# OS files
+.DS_Store
+Thumbs.db

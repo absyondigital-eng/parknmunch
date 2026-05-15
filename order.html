@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Order from Park N Munch - Manchester's park &amp; eat takeaway. Add items to cart and we'll bring your food to your car.">
+  <title>Order Now | Park N Munch Manchester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/order.css">
+  <style>
+    .menu-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 60px 20px;
+      color: var(--text-2);
+      font-size: 0.9rem;
+    }
+    .menu-loading.hidden { display: none; }
+    .ml-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(147,51,234,0.2);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .menu-error {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-2);
+    }
+    .menu-error.visible { display: flex; }
+    .menu-retry-btn {
+      padding: 10px 22px;
+      background: rgba(147,51,234,0.15);
+      color: var(--purple-light);
+      border: 1px solid rgba(147,51,234,0.3);
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .menu-retry-btn:hover { background: rgba(147,51,234,0.25); }
+  </style>
+</head>
+<body class="order-page">
+
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html">
+        <img src="images/ParkNMunch-logo.gif" alt="Park N Munch" class="logo-img">
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="index.html#menu">Menu</a>
+        <a href="index.html#reviews">Reviews</a>
+        <a href="index.html#contact">Contact</a>
+        <a href="order.html" class="nav-cta active">Order Now →</a>
+      </div>
+      <button class="nav-burger" id="navBurger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile nav -->
+  <div class="nav-mobile" id="navMobile">
+    <a href="index.html">Home</a>
+    <a href="index.html#menu">Menu</a>
+    <a href="index.html#reviews">Reviews</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="order.html" class="nav-cta">Order Now →</a>
+  </div>
+
+
+  <!-- ============================================================
+       ORDER HEADER
+       ============================================================ -->
+  <div class="order-header">
+    <div class="oh-inner">
+      <div class="oh-text">
+        <span class="tag">Build Your Order</span>
+        <h1 class="oh-title">Order from <span class="gradient-text">Your Car</span></h1>
+        <p class="oh-sub">Add items &rarr; checkout &rarr; stay parked. We'll come to you.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       ORDER BODY — 2-column layout
+       ============================================================ -->
+  <div class="order-body">
+
+    <!-- LEFT: Menu -->
+    <div class="order-menu-col">
+      <div class="order-tabs" id="orderTabs" role="tablist"></div>
+      <div class="menu-loading" id="menuLoading" aria-live="polite" aria-busy="true">
+        <div class="ml-spinner"></div>
+        <p>Loading menu…</p>
+      </div>
+      <div class="menu-error" id="menuError" role="alert">
+        <span style="font-size:2rem">⚠️</span>
+        <p>Couldn't load the menu. Check your connection and try again.</p>
+        <button class="menu-retry-btn" id="menuRetryBtn">Try Again</button>
+      </div>
+      <div class="order-grid" id="orderGrid" aria-live="polite" style="display:none"></div>
+    </div>
+
+    <!-- RIGHT: Persistent cart panel -->
+    <div class="order-cart-col">
+      <div class="cart-panel" id="cartPanel">
+
+        <!-- ---- CART VIEW ---- -->
+        <div class="cv-cart" id="cvCart">
+
+          <div class="cp-head">
+            <div class="cp-title">
+              🛒 Your Cart
+              <span class="cs-count-badge" id="csCountBadge">0</span>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div class="cart-empty" id="csEmpty">
+            <span class="ce-icon">🛒</span>
+            <p>Your cart is empty.<br>Add items from the menu to get started.</p>
+          </div>
+
+          <!-- Cart items -->
+          <div class="cs-items" id="csItems"></div>
+
+          <!-- Footer: summary + checkout button -->
+          <div class="cv-footer">
+            <div class="cs-summary">
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <span class="val" id="summarySubtotal">£0.00</span>
+              </div>
+              <div class="summary-row">
+                <span>Collection fee</span>
+                <span class="val" style="color:#4ade80">FREE</span>
+              </div>
+              <div class="summary-row total">
+                <span>Total</span>
+                <span class="val" id="summaryTotal">£0.00</span>
+              </div>
+            </div>
+            <button class="checkout-btn" id="checkoutBtn" disabled>
+              Proceed to Checkout &rarr;
+            </button>
+          </div>
+
+        </div><!-- /cv-cart -->
+
+
+        <!-- ---- CHECKOUT VIEW (slides over cart view) ---- -->
+        <div class="cv-checkout" id="cvCheckout">
+
+          <div class="cp-head">
+            <button class="cp-back" id="cpBack" aria-label="Back to cart">← Cart</button>
+            <span class="cp-title" style="font-size:0.95rem">Checkout</span>
+          </div>
+
+          <!-- Scrollable body -->
+          <div class="cv-checkout-body">
+
+            <!-- Mini order summary -->
+            <div class="order-summary-mini">
+              <div class="osm-title">Order Summary</div>
+              <div class="osm-items" id="osMiniItems"></div>
+              <div class="osm-total">
+                <span>Total</span>
+                <span class="osm-p" id="osMiniTotal">£0.00</span>
+              </div>
+            </div>
+
+            <!-- Checkout form -->
+            <form class="checkout-form" id="checkoutForm" novalidate>
+
+              <!-- Full Name -->
+              <div class="form-group">
+                <label class="form-label" for="custName">
+                  Full Name <span class="required">*</span>
+                </label>
+                <input type="text" id="custName" class="form-input"
+                  placeholder="e.g. James Wilson" autocomplete="name" required>
+                <span class="field-error" id="nameError">⚠ Please enter your full name</span>
+              </div>
+
+              <!-- Phone -->
+              <div class="form-group">
+                <label class="form-label" for="custPhone">
+                  Phone Number <span class="required">*</span>
+                </label>
+                <input type="tel" id="custPhone" class="form-input"
+                  placeholder="e.g. 07700 900123" autocomplete="tel" required>
+                <span class="field-error" id="phoneError">⚠ Please enter your phone number</span>
+              </div>
+
+              <!-- Car Registration — highlighted -->
+              <div class="form-group reg-group">
+                <label class="form-label" for="carReg">
+                  🚗 Car Registration <span class="required">*</span>
+                  <span class="label-hint">- so we find your car</span>
+                </label>
+                <div class="reg-input-wrap">
+                  <span class="reg-icon">🔑</span>
+                  <input type="text" id="carReg" class="form-input reg-input"
+                    placeholder="e.g. AB12 CDE"
+                    autocomplete="off" maxlength="8" required>
+                </div>
+                <div class="reg-note">
+                  We use your reg to locate your vehicle and deliver to your window.
+                </div>
+                <span class="field-error" id="regError">
+                  ⚠ Please enter your car registration so we can bring your order to you
+                </span>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-group">
+                <label class="form-label" for="orderNotes">
+                  Notes <span class="label-hint">- optional</span>
+                </label>
+                <textarea id="orderNotes" class="form-textarea"
+                  placeholder="e.g. No sauce on the RS5, extra napkins please..."
+                  rows="3"></textarea>
+              </div>
+
+              <button type="submit" class="form-submit">
+                🚗 Place Order, We'll Come to You
+              </button>
+              <span id="stripeError" class="stripe-error"></span>
+
+            </form>
+
+          </div><!-- /cv-checkout-body -->
+        </div><!-- /cv-checkout -->
+
+      </div><!-- /cart-panel -->
+    </div><!-- /order-cart-col -->
+
+  </div><!-- /order-body -->
+
+
+  <!-- ============================================================
+       ORDER SUCCESS OVERLAY
+       ============================================================ -->
+  <div class="success-overlay" id="successOverlay" role="dialog" aria-modal="true">
+    <div class="success-card">
+      <span class="sc-icon">🎉</span>
+      <h2 class="sc-title">Order Placed!</h2>
+      <p class="sc-sub">
+        Stay in your car, our team is on their way to you now.<br>
+        We matched your registration:
+      </p>
+      <div class="sc-reg" id="scRegDisplay">AB12 CDE</div>
+      <button class="sc-close" id="scClose">Back to Menu</button>
+      <p class="sc-note">⚠ This is a demo only, no real order has been placed.</p>
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       BURGER CUSTOMISATION MODAL
+       ============================================================ -->
+  <div class="burger-modal-overlay" id="burgerModalOverlay" role="dialog" aria-modal="true" aria-labelledby="bmItemName">
+    <div class="burger-modal-card">
+
+      <!-- Header -->
+      <div class="bm-header">
+        <div>
+          <div class="bm-title" id="bmItemName">Burger</div>
+          <div class="bm-desc" id="bmItemDesc"></div>
+        </div>
+        <div class="bm-header-right">
+          <div class="bm-current-price" id="bmCurrentPrice">£0.00</div>
+          <button class="bm-close" id="bmClose" aria-label="Close modal">✕</button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="bm-body">
+
+        <!-- 1. Choose Style (RS3 / RS5 only — hidden for other burgers) -->
+        <div id="bmStyleSection">
+          <div class="bm-section-label">
+            Choose Style
+            <span class="bm-required-tag">Required</span>
+          </div>
+          <div class="bm-chips">
+            <label class="bm-chip-label">
+              <input type="radio" name="bmStyle" value="Normal" class="bm-style-radio">
+              <div class="bm-chip">
+                <span class="bm-chip-emoji">🍔</span>
+                <span class="bm-chip-name">Normal</span>
+                <span class="bm-chip-sub">Classic build</span>
+              </div>
+            </label>
+            <label class="bm-chip-label">
+              <input type="radio" name="bmStyle" value="Dipped (Spicy)" class="bm-style-radio">
+              <div class="bm-chip">
+                <span class="bm-chip-emoji">🌶️</span>
+                <span class="bm-chip-name">Dipped</span>
+                <span class="bm-chip-sub">Spicy kick</span>
+              </div>
+            </label>
+          </div>
+          <div class="bm-style-error" id="bmStyleError">⚠ Please choose a style to continue</div>
+        </div>
+
+        <!-- 2. Make it a Meal -->
+        <div>
+          <div class="bm-section-label">Make it a Meal</div>
+          <label class="bm-meal-row" id="bmMealRow">
+            <div class="bm-meal-text-wrap">
+              <div class="bm-meal-title">🍟 Add fries &amp; a drink</div>
+              <div class="bm-meal-upsell">+£1.50</div>
+            </div>
+            <div class="bm-toggle">
+              <input type="checkbox" id="bmMealToggle">
+              <div class="bm-toggle-track"></div>
+              <div class="bm-toggle-thumb"></div>
+            </div>
+          </label>
+          <div class="bm-drinks-wrap" id="bmDrinksWrap">
+            <div class="bm-drinks-heading">Choose your drink:</div>
+            <div id="bmDrinksList"></div>
+            <div class="bm-drink-error" id="bmDrinkError">⚠ Please select a drink</div>
+          </div>
+        </div>
+
+        <!-- 3. Mods / Extras -->
+        <div>
+          <div class="bm-section-label">
+            Mods
+            <span style="font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.3)">- optional</span>
+          </div>
+          <div class="bm-addons">
+            <label class="bm-addon-row">
+              <input type="checkbox" class="bm-addon-cb" data-addon-id="smash">
+              <span class="bm-addon-name">Smash patty</span>
+              <span class="bm-addon-price">+£1.49</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="bm-addon-cb" data-addon-id="fillet">
+              <span class="bm-addon-name">Chicken fillet</span>
+              <span class="bm-addon-price">+£1.00</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="bm-addon-cb" data-addon-id="donner">
+              <span class="bm-addon-name">Donner</span>
+              <span class="bm-addon-price">+£1.49</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="bm-addon-cb" data-addon-id="cheese">
+              <span class="bm-addon-name">Cheese</span>
+              <span class="bm-addon-price">+£0.30</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Notes -->
+        <div>
+          <label class="bm-section-label" for="bmNote">
+            Add notes
+            <span style="font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.3)">- optional</span>
+          </label>
+          <textarea id="bmNote" class="bm-note-input"
+            placeholder="No lettuce, extra sauce, etc."
+            rows="2"></textarea>
+        </div>
+
+      </div><!-- /bm-body -->
+
+      <!-- Footer -->
+      <div class="bm-footer">
+        <div class="bm-base-note">Base price: <span id="bmBasePrice">£0.00</span></div>
+        <button class="bm-submit" id="bmSubmit">Add to Cart →</button>
+      </div>
+
+    </div><!-- /burger-modal-card -->
+  </div><!-- /burger-modal-overlay -->
+
+
+  <!-- ============================================================
+       CANS DRINK SELECTION MODAL
+       ============================================================ -->
+  <div class="cans-modal-overlay" id="cansModalOverlay" role="dialog" aria-modal="true" aria-label="Choose your drink">
+    <div class="cans-modal-card">
+
+      <div class="cm-header">
+        <div class="cm-title">🫙 Choose Your Drink</div>
+        <button class="cm-close" id="cmClose" aria-label="Close">✕</button>
+      </div>
+
+      <div class="cm-body">
+        <label class="cm-drink-row">
+          <input type="radio" name="cmDrink" value="Coca Cola">
+          <span class="cm-drink-label">Coca Cola</span>
+        </label>
+        <label class="cm-drink-row">
+          <input type="radio" name="cmDrink" value="Diet Coca Cola">
+          <span class="cm-drink-label">Diet Coca Cola</span>
+        </label>
+        <label class="cm-drink-row">
+          <input type="radio" name="cmDrink" value="Sprite">
+          <span class="cm-drink-label">Sprite</span>
+        </label>
+        <label class="cm-drink-row">
+          <input type="radio" name="cmDrink" value="Irn Bru">
+          <span class="cm-drink-label">Irn Bru</span>
+        </label>
+        <label class="cm-drink-row">
+          <input type="radio" name="cmDrink" value="Rubicon Mango">
+          <span class="cm-drink-label">Rubicon Mango</span>
+        </label>
+      </div>
+
+      <div class="cm-footer">
+        <div class="cm-error" id="cmError">⚠ Please select a drink to continue</div>
+        <button class="cm-submit" id="cmSubmit">Add to Cart →</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       MY GARAGE MODAL
+       ============================================================ -->
+  <div class="garage-overlay" id="garageOverlay" role="dialog" aria-modal="true" aria-labelledby="garageTitle">
+    <div class="garage-modal">
+
+      <div class="gm-header">
+        <div class="gm-header-left">
+          <div class="gm-title" id="garageTitle">My Garage</div>
+          <div class="gm-sub">Pick any 3 burgers</div>
+        </div>
+        <div class="gm-header-right">
+          <div class="gm-counter"><span id="gmCount">0</span><span class="gm-total">/3</span></div>
+          <button class="gm-close" id="gmClose" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <div class="gm-body" id="gmBody"></div>
+
+      <div class="gm-footer">
+        <p class="gm-error" id="gmError">Select 3 burgers to continue</p>
+        <button class="gm-submit" id="gmSubmit" disabled>Add My Garage &rarr;</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       UPSELL MODAL (shown before checkout)
+       ============================================================ -->
+  <div class="upsell-overlay" id="upsellOverlay" role="dialog" aria-modal="true" aria-labelledby="upsellTitle">
+    <div class="upsell-modal">
+
+      <div class="um-header">
+        <div>
+          <div class="um-title" id="upsellTitle">Anything else?</div>
+          <div class="um-sub">Add a side or drink before you checkout</div>
+        </div>
+        <button class="um-close" id="umClose" aria-label="Close">✕</button>
+      </div>
+
+      <div class="um-items" id="umItems"></div>
+
+      <div class="um-footer">
+        <button class="um-view-cart" id="umContinue" aria-label="View cart and proceed to checkout">
+          <span class="uvc-left">
+            <svg class="uvc-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="uvc-label">View Cart</span>
+          </span>
+          <span class="uvc-arrow">→</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       CART ABANDONMENT WARNING MODAL
+       ============================================================ -->
+  <div class="abandon-overlay" id="abandonOverlay" role="dialog" aria-modal="true" aria-labelledby="abandonTitle">
+    <div class="abandon-modal">
+      <div class="ab-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+      </div>
+      <h2 class="ab-title" id="abandonTitle">Leave Your Order?</h2>
+      <p class="ab-text">You have items in your cart that will not be saved if you leave this page.</p>
+      <div class="ab-actions">
+        <button class="ab-keep" id="abandonKeep">Keep Ordering</button>
+        <button class="ab-leave" id="abandonLeave">Leave Anyway</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast notification -->
+  <div class="cart-toast" id="cartToast" role="alert" aria-live="polite">
+    <div class="toast-inner">
+      <span class="toast-check">✓</span>
+      <span class="toast-msg" id="toastMsg">Added to cart</span>
+      <button class="toast-view-btn" id="toastViewBtn">View Cart</button>
+    </div>
+  </div>
+
+  <!-- Sticky cart bar (mobile) -->
+  <div class="sticky-cart-bar" id="stickyCartBar" role="button" tabindex="0" aria-label="View cart">
+    <div class="scb-left">
+      <span class="scb-icon">🛒</span>
+      <span class="scb-label">View Cart</span>
+      <span class="scb-count" id="scbCount">0</span>
+    </div>
+    <div class="scb-right">
+      <span class="scb-total" id="scbTotal">£0.00</span>
+      <span class="scb-arrow">→</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/menu-data.js"></script>
+  <script src="js/supabase-menu.js"></script>
+  <script src="js/order.js"></script>
+</body>
+</html>

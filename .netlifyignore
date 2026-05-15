@@ -1,0 +1,3 @@
+admin/
+supabase-migration.sql
+supabase-products-migration.sql
