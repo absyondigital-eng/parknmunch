@@ -37,11 +37,14 @@
 
   /* ── Rebuild global MENU and POPULAR_IDS from fetched rows ── */
   function applyProducts(rows) {
-    window.MENU = rows.map(rowToItem);
-    window.POPULAR_IDS = rows
+    const items = rows.map(rowToItem);
+    MENU.length = 0;
+    items.forEach(i => MENU.push(i));
+    POPULAR_IDS.length = 0;
+    rows
       .filter(p => p.popular)
       .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-      .map(p => p.id);
+      .forEach(p => POPULAR_IDS.push(p.id));
   }
 
   /* ── Fetch active products ──────────────────────────────── */
