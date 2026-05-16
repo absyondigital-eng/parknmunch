@@ -6,22 +6,16 @@ import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
 
 const STATUS_TRANSITIONS = {
-  new: ['preparing'],
-  preparing: ['ready'],
-  ready: ['completed'],
+  new: ['completed'],
   completed: [],
   refunded: [],
 }
 
 const TRANSITION_STYLES = {
-  preparing: 'bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25',
-  ready: 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25',
   completed: 'bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/25',
 }
 
 const TRANSITION_LABELS = {
-  preparing: 'Mark as Preparing',
-  ready: 'Mark as Ready',
   completed: 'Mark as Completed',
 }
 

@@ -4,16 +4,12 @@ import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
 
 const STATUS_TRANSITIONS = {
-  new: ['preparing'],
-  preparing: ['ready'],
-  ready: ['completed'],
+  new: ['completed'],
   completed: [],
   refunded: [],
 }
 
 const TRANSITION_LABELS = {
-  preparing: { label: 'Mark Preparing', color: 'amber' },
-  ready: { label: 'Mark Ready', color: 'blue' },
   completed: { label: 'Mark Completed', color: 'green' },
 }
 

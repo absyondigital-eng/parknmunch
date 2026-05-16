@@ -14,6 +14,7 @@ const CATEGORIES = [
   { id: 'fuel-station', label: 'Fuel Station',   emoji: '⛽' },
   { id: 'cakes',        label: 'Cakes',          emoji: '🍰' },
   { id: 'sides',        label: 'Sides',          emoji: '🍗' },
+  { id: 'kids',         label: 'Kids',           emoji: '🧒' },
 ];
 
 /* Virtual categories: map one tab id to multiple real category ids */

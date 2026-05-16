@@ -5,26 +5,23 @@ import { playNotificationSound } from '../../lib/audio'
 import { OrderCard } from './OrderCard'
 import { OrderDetailModal } from './OrderDetailModal'
 import { RefundModal } from '../refunds/RefundModal'
+import { BusyMode } from './BusyMode'
 import { Spinner } from '../ui/Spinner'
 
 const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'new', label: 'New' },
-  { key: 'preparing', label: 'Preparing' },
-  { key: 'ready', label: 'Ready' },
+  { key: 'new',       label: 'New' },
   { key: 'completed', label: 'Completed' },
+  { key: 'all',       label: 'All' },
 ]
 
 const FILTER_BADGE_COLOR = {
-  new: 'bg-red-500 text-white',
-  preparing: 'bg-amber-500 text-white',
-  ready: 'bg-blue-500 text-white',
+  new:       'bg-red-500 text-white',
   completed: 'bg-green-500 text-white',
-  all: 'bg-[#9333ea] text-white',
+  all:       'bg-[#9333ea] text-white',
 }
 
 export default function OrdersPage() {
-  const [activeFilter, setActiveFilter] = useState('all')
+  const [activeFilter, setActiveFilter] = useState('new')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [refundOrder, setRefundOrder] = useState(null)
   const { toast } = useToast()
@@ -152,6 +149,8 @@ export default function OrdersPage() {
 
       {/* Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-5">
+        <BusyMode />
+
         {/* Error state */}
         {error && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
