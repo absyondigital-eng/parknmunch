@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { useToast } from '../../context/ToastContext'
-import { supabase } from '../../lib/supabase'
 import { Spinner } from '../ui/Spinner'
+
+const REFUND_URL = import.meta.env.VITE_STRIPE_REFUND_URL
 
 export function RefundModal({ order, onClose, onSuccess }) {
   const [refundType, setRefundType] = useState('full')
@@ -26,25 +27,22 @@ export function RefundModal({ order, onClose, onSuccess }) {
 
     setProcessing(true)
     try {
-      // Insert refund record
-      const { error: refundError } = await supabase.from('refunds').insert({
-        order_id: order.id,
-        amount: refundAmount,
-        reason: reason.trim(),
-        stripe_refund_id: null,
+      if (!REFUND_URL) throw new Error('VITE_STRIPE_REFUND_URL is not set in environment variables')
+
+      const res = await fetch(REFUND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: order.id,
+          amount: refundAmount,
+          reason: reason.trim(),
+        }),
       })
 
-      if (refundError) throw refundError
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Refund failed')
 
-      // Update order status to refunded
-      const { error: statusError } = await supabase
-        .from('orders')
-        .update({ order_status: 'refunded' })
-        .eq('id', order.id)
-
-      if (statusError) throw statusError
-
-      toast.success(`Refund of £${refundAmount.toFixed(2)} recorded successfully.`)
+      toast.success(`Refund of £${refundAmount.toFixed(2)} processed via Stripe.`)
       onSuccess()
     } catch (err) {
       console.error('Refund failed:', err)
@@ -160,7 +158,7 @@ export function RefundModal({ order, onClose, onSuccess }) {
               <span className="text-lg font-bold text-[#c084fc]">£{refundAmount.toFixed(2)}</span>
             </div>
             <p className="text-xs text-[#555] mt-2">
-              Note: Stripe refund will be processed via API. This record saves the refund details.
+              This will immediately process the refund via Stripe and return the money to the customer.
             </p>
           </div>
         )}

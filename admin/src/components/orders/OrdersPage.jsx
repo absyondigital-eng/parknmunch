@@ -5,7 +5,6 @@ import { playNotificationSound } from '../../lib/audio'
 import { OrderCard } from './OrderCard'
 import { OrderDetailModal } from './OrderDetailModal'
 import { RefundModal } from '../refunds/RefundModal'
-import { BusyMode } from './BusyMode'
 import { Spinner } from '../ui/Spinner'
 
 const FILTERS = [
@@ -149,8 +148,6 @@ export default function OrdersPage() {
 
       {/* Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-5">
-        <BusyMode />
-
         {/* Error state */}
         {error && (
           <div className="flex flex-col items-center justify-center py-16 gap-3">

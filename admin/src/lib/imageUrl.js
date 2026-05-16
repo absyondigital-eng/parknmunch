@@ -1,18 +1,16 @@
-/**
- * Resolves a product image_url to a usable src attribute.
- * - Full URLs (http/https) are returned as-is
- * - Relative paths like "images/rs5-image.jpeg" become "/images/rs5-image.jpeg"
- *   so the Vite dev-server plugin (or the deployed site root) can serve them
- */
+// VITE_CUSTOMER_SITE_URL must be set in the admin Netlify site env vars
+// so relative image paths (e.g. "images/rs5.jpeg") resolve against the customer site.
+const CUSTOMER = (import.meta.env.VITE_CUSTOMER_SITE_URL || '').replace(/\/$/, '')
+
 export function resolveImageUrl(url) {
   if (!url) return null
   if (
     url.startsWith('http://') ||
     url.startsWith('https://') ||
-    url.startsWith('/') ||
     url.startsWith('data:')
   ) {
     return url
   }
-  return '/' + url
+  const path = url.startsWith('/') ? url : '/' + url
+  return CUSTOMER ? CUSTOMER + path : path
 }

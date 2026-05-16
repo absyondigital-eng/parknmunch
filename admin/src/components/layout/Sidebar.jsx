@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
+import { BusyMode } from '../orders/BusyMode'
 
 const NAV_LINKS = [
   {
@@ -117,6 +118,11 @@ export function Sidebar({ onClose, newOrderCount = 0 }) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Busy mode */}
+      <div className="px-3 pb-3">
+        <BusyMode />
+      </div>
 
       {/* User section */}
       <div className="p-3 border-t border-white/[0.07]">
