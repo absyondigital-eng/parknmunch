@@ -271,13 +271,15 @@
       var key = window.SUPABASE_ANON_KEY;
       if (!url || !key) return;
       var db = window.supabase.createClient(url, key);
-      db.from('settings').select('busy_mode,wait_time').eq('id', 'main').single()
+      db.from('settings').select('wait_time').eq('id', 'main').single()
         .then(function (res) {
-          var data = res.data;
-          if (data && data.busy_mode && data.wait_time) {
-            var el = document.getElementById('waitMsg');
-            if (el) el.textContent = 'Your order will be prepared in approximately ' + data.wait_time + ' minutes.';
-          }
+          var mins = (res.data && res.data.wait_time) ? res.data.wait_time : 15;
+          var el = document.getElementById('waitMsg');
+          if (el) el.textContent = 'Your order will be prepared in approximately ' + mins + ' minutes.';
+        })
+        .catch(function () {
+          var el = document.getElementById('waitMsg');
+          if (el) el.textContent = 'Your order will be prepared in approximately 15 minutes.';
         });
     })();
   </script>

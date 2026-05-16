@@ -4,6 +4,7 @@ import { Modal } from '../ui/Modal'
 import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
+import { printReceipt } from '../../lib/printReceipt'
 
 const STATUS_TRANSITIONS = {
   new: ['completed'],
@@ -87,7 +88,7 @@ export function OrderDetailModal({ order, onClose, onStatusChange, onRefund }) {
   }
 
   function handlePrint() {
-    window.print()
+    printReceipt(order)
   }
 
   return (

@@ -15,6 +15,7 @@ export function useOrders({ onNewOrder } = {}) {
   const fetchOrders = useCallback(async () => {
     try {
       setError(null)
+      setLoading(true)
       const { data, error: fetchError } = await supabase
         .from('orders')
         .select('*')

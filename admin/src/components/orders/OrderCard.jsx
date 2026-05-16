@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
+import { printReceipt } from '../../lib/printReceipt'
 
 const STATUS_TRANSITIONS = {
   new: ['completed'],
@@ -71,14 +72,7 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
   }
 
   function handlePrint() {
-    const printArea = document.getElementById(`receipt-${order.id}`)
-    if (printArea) {
-      printArea.classList.add('print-receipt')
-      window.print()
-      setTimeout(() => printArea.classList.remove('print-receipt'), 500)
-    } else {
-      window.print()
-    }
+    printReceipt(order)
   }
 
   return (
@@ -87,26 +81,6 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
         isNew ? 'animate-pulseRedGlow' : ''
       }`}
     >
-      {/* Hidden print receipt */}
-      <div id={`receipt-${order.id}`} className="hidden">
-        <div style={{ fontFamily: 'monospace', padding: '20px', color: '#000' }}>
-          <h2>Park N Munch</h2>
-          <p>Order #{String(order.id).slice(-6).toUpperCase()}</p>
-          <p>Time: {format(createdAt, 'dd/MM/yyyy HH:mm')}</p>
-          <p>Customer: {order.customer_name}</p>
-          <p>Phone: {order.customer_phone}</p>
-          <p>Car Reg: {order.car_registration}</p>
-          {order.bay_number && <p>Bay: {order.bay_number}</p>}
-          <hr />
-          {items.map((item, i) => (
-            <p key={i}>{item.quantity}x {item.name} — £{(item.price * item.quantity).toFixed(2)}</p>
-          ))}
-          <hr />
-          <p>Total: £{Number(order.total).toFixed(2)}</p>
-          {order.notes && <p>Notes: {order.notes}</p>}
-        </div>
-      </div>
-
       <div className="p-4 sm:p-5">
         {/* Top row */}
         <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
