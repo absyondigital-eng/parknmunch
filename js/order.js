@@ -638,10 +638,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     cvCheckout.classList.add('open');
     updateOrderSummaryMini();
     cvCheckout.querySelector('.cv-checkout-body').scrollTop = 0;
+    if (stickyCartBar) stickyCartBar.classList.remove('visible');
   }
 
   function closeCheckout() {
     cvCheckout.classList.remove('open');
+    updateStickyCart();
   }
 
   if (checkoutBtn) checkoutBtn.addEventListener('click', () => { if (cart.length > 0) openUpsellModal(); });
