@@ -1031,7 +1031,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!stickyCartBar) return;
     const items = getTotalItems();
     const total = getTotal();
-    if (items > 0) {
+    const checkoutOpen = cvCheckout && cvCheckout.classList.contains('open');
+    if (items > 0 && !checkoutOpen) {
       stickyCartBar.classList.add('visible');
       if (scbCountEl) scbCountEl.textContent = items;
       if (scbTotalEl) scbTotalEl.textContent = '£' + total.toFixed(2);
