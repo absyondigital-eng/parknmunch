@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { useNewOrderAlert } from '../../hooks/useNewOrderAlert'
 
 const BOTTOM_NAV = [
   {
@@ -62,7 +63,13 @@ const BOTTOM_NAV = [
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [newOrderCount] = useState(0)
+  const { newOrderCount, clearCount } = useNewOrderAlert()
+  const location = useLocation()
+
+  // Clear badge when navigating to the orders page
+  useEffect(() => {
+    if (location.pathname === '/orders') clearCount()
+  }, [location.pathname, clearCount])
 
   // Close sidebar on resize to desktop
   useEffect(() => {
