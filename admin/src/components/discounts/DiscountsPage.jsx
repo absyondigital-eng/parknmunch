@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../../context/ToastContext'
 
@@ -12,6 +12,7 @@ export default function DiscountsPage() {
   const [togglingId, setTogglingId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const { toast } = useToast()
+  const channelRef = useRef(null)
 
   const fetchCodes = useCallback(async () => {
     setLoading(true)
@@ -24,7 +25,32 @@ export default function DiscountsPage() {
     setLoading(false)
   }, [toast])
 
-  useEffect(() => { fetchCodes() }, [fetchCodes])
+  useEffect(() => {
+    fetchCodes()
+
+    // Realtime: keep uses count and active state in sync automatically
+    const channel = supabase
+      .channel('discounts-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'discount_codes' }, (payload) => {
+        setCodes((prev) => [payload.new, ...prev])
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'discount_codes' }, (payload) => {
+        setCodes((prev) => prev.map((c) => (c.id === payload.new.id ? payload.new : c)))
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'discount_codes' }, (payload) => {
+        setCodes((prev) => prev.filter((c) => c.id !== payload.old.id))
+      })
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+    }
+  }, [fetchCodes])
 
   async function handleCreate(e) {
     e.preventDefault()

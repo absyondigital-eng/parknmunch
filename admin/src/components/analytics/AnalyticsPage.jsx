@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
                 icon="✅"
                 label="Completed Orders"
                 value={stats.completedOrders}
-                sub={`${stats.cancelledOrders} cancelled`}
+                sub={`${stats.refundedOrders} refunded`}
                 color="green"
               />
               <StatCard
