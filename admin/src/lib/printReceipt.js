@@ -46,7 +46,6 @@ export function printReceipt(order) {
 </head>
 <body>
 <div class="center bold large" style="margin-bottom:2px;">PARK N MUNCH</div>
-<div class="center" style="font-size:8pt;margin-bottom:1px;">Manchester's Park &amp; Eat Takeaway</div>
 <div class="center" style="font-size:8pt;margin-bottom:6px;">Unit 5-10 Choir St, Salford M7 1ZD</div>
 
 <div class="dashes"></div>
