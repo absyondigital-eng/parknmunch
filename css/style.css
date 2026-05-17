@@ -1096,9 +1096,12 @@ footer {
 .cat-card-burgers   .cat-card-bg { background-color: #3d1515; background-image: url('../images/burgers-image.jpeg'); }
 .cat-card-munchboxes .cat-card-bg { background-color: #181560; background-image: url('../images/munchboxes-image.jpeg'); }
 .cat-card-fries     .cat-card-bg { background-color: #3d2c00; background-image: url('../images/loaded-fries-image.jpeg'); }
-.cat-card-fuel      .cat-card-bg { background-color: #003328; background-image: url('../images/fuel-station-image.jpeg'); }
+.cat-card-fuel      .cat-card-bg { background-color: #003328; background-image: url('../images/fuel-station-image.png'); }
 .cat-card-wraps     .cat-card-bg { background-color: #003824; background-image: url('../images/wraps-image.jpeg'); }
 .cat-card-sides     .cat-card-bg { background-color: #3d2200; background-image: url('../images/sides-image.jpeg'); }
+.cat-card-cakes     .cat-card-bg { background-color: #3d1535; background-image: url('../images/cakes-image.png'); }
+.cat-card-kids      .cat-card-bg { background-color: #1a3300; background-image: url('../images/kids-meal-image.png'); }
+.cat-card-drinks    .cat-card-bg { background-color: #00203d; background-image: url('../images/drinks-image.png'); }
 
 .cat-card-overlay {
   position: absolute;
