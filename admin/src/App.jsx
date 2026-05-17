@@ -7,6 +7,7 @@ import OrdersPage from './components/orders/OrdersPage'
 import MenuPage from './components/menu/MenuPage'
 import AnalyticsPage from './components/analytics/AnalyticsPage'
 import RefundsPage from './components/refunds/RefundsPage'
+import DiscountsPage from './components/discounts/DiscountsPage'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="menu" element={<MenuPage />} />
                 <Route path="analytics" element={<AnalyticsPage />} />
                 <Route path="refunds" element={<RefundsPage />} />
+                <Route path="discounts" element={<DiscountsPage />} />
                 <Route path="*" element={<Navigate to="/orders" replace />} />
               </Routes>
             </Layout>

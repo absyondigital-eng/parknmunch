@@ -1,4 +1,10 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.Supabase_URL,
+  process.env.Supabase_Service_Role_Key
+);
 
 exports.handler = async (event) => {
   const headers = {
@@ -16,9 +22,9 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  let items, customer;
+  let items, customer, discountCode;
   try {
-    ({ items, customer = {} } = JSON.parse(event.body));
+    ({ items, customer = {}, discountCode } = JSON.parse(event.body));
   } catch {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
@@ -32,6 +38,22 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Server-side discount validation (source of truth — frontend check is UX only)
+    let discount = null;
+    if (discountCode && typeof discountCode === 'string') {
+      const code = discountCode.trim().toUpperCase();
+      const { data } = await supabase
+        .from('discount_codes')
+        .select('code, percentage, active, uses, max_uses')
+        .eq('code', code)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (data && (data.max_uses === null || data.uses < data.max_uses)) {
+        discount = data;
+      }
+    }
+
     const lineItems = items.map(({ name, price, quantity }) => ({
       price_data: {
         currency: 'gbp',
@@ -41,7 +63,6 @@ exports.handler = async (event) => {
       quantity,
     }));
 
-    // Compact order summary — keep within Stripe's 500-char metadata limit per value
     const orderRaw = JSON.stringify(
       items.map(({ name, quantity, price }) => ({ n: name, q: quantity, p: price }))
     );
@@ -49,17 +70,31 @@ exports.handler = async (event) => {
 
     const baseUrl = process.env.URL || 'http://localhost:8888';
 
+    // Create Stripe coupon for validated discount
+    let stripeCoupons = [];
+    if (discount) {
+      const coupon = await stripe.coupons.create({
+        percent_off: discount.percentage,
+        duration: 'once',
+        name: `${discount.percentage}% off`,
+      });
+      stripeCoupons = [{ coupon: coupon.id }];
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
       success_url: `${baseUrl}/success`,
-      cancel_url:  `${baseUrl}/order.html`,
+      cancel_url: `${baseUrl}/order.html`,
+      discounts: stripeCoupons.length ? stripeCoupons : undefined,
       metadata: {
-        name:   customer.name,
-        phone:  customer.phone,
-        carReg: customer.carReg,
-        order:  orderMeta,
+        name:          customer.name,
+        phone:         customer.phone,
+        carReg:        customer.carReg,
+        order:         orderMeta,
+        discount_code: discount ? discount.code : '',
+        discount_pct:  discount ? String(discount.percentage) : '',
       },
     });
 

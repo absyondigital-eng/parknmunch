@@ -49,6 +49,15 @@ const BOTTOM_NAV = [
       </svg>
     ),
   },
+  {
+    to: '/discounts',
+    label: 'Discounts',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M17 17h.01M7 17L17 7M9 7a2 2 0 11-4 0 2 2 0 014 0zm10 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Layout({ children }) {

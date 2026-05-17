@@ -122,16 +122,20 @@ exports.handler = async (event) => {
   const customerPhone = metadata.phone  || '';
   const carReg        = metadata.carReg || '';
   const orderRaw      = metadata.order  || '[]';
+  const discountCode  = metadata.discount_code || '';
+  const discountPct   = parseInt(metadata.discount_pct || '0', 10);
 
   if (!customerName)  console.warn(`[${reqId}] metadata.name is empty`);
   if (!customerPhone) console.warn(`[${reqId}] metadata.phone is empty`);
   if (!carReg)        console.warn(`[${reqId}] metadata.carReg is empty`);
 
-  const orderItems  = safeParseOrderItems(orderRaw);
-  const totalPounds = session.amount_total / 100;
+  const orderItems     = safeParseOrderItems(orderRaw);
+  const subtotalPounds = (session.amount_subtotal != null ? session.amount_subtotal : session.amount_total) / 100;
+  const totalPounds    = session.amount_total / 100;
+  const discountAmount = discountPct > 0 ? parseFloat((subtotalPounds - totalPounds).toFixed(2)) : 0;
 
   console.log(`[${reqId}] Parsed order items (${orderItems.length}):`, JSON.stringify(orderItems));
-  console.log(`[${reqId}] Total: £${totalPounds.toFixed(2)}`);
+  console.log(`[${reqId}] Subtotal: £${subtotalPounds.toFixed(2)} | Total: £${totalPounds.toFixed(2)} | Discount: ${discountCode} ${discountPct}% -£${discountAmount.toFixed(2)}`);
 
   /* ── 6. Duplicate check ─────────────────────────────────────────── */
   console.log(`[${reqId}] Checking for duplicate session in Supabase...`);
@@ -163,17 +167,20 @@ exports.handler = async (event) => {
 
   /* ── 7. Build insert record ─────────────────────────────────────── */
   const record = {
-    stripe_session_id: session.id,
-    customer_name:     customerName,
-    customer_phone:    customerPhone,
-    car_registration:  carReg,
-    bay_number:        null,
-    order_items:       orderItems,
-    subtotal:          totalPounds,
-    total:             totalPounds,
-    payment_status:    'paid',
-    order_status:      'new',
-    notes:             null,
+    stripe_session_id:   session.id,
+    customer_name:       customerName,
+    customer_phone:      customerPhone,
+    car_registration:    carReg,
+    bay_number:          null,
+    order_items:         orderItems,
+    subtotal:            subtotalPounds,
+    total:               totalPounds,
+    payment_status:      'paid',
+    order_status:        'new',
+    notes:               null,
+    discount_code:       discountCode || null,
+    discount_percentage: discountPct  || null,
+    discount_amount:     discountAmount || null,
   };
 
   console.log(`[${reqId}] Insert payload:`, JSON.stringify(record));
@@ -198,6 +205,16 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error(`[${reqId}] Unexpected error during insert:`, err.message, err.stack);
     return { statusCode: 500, body: JSON.stringify({ error: 'Database insert exception' }) };
+  }
+
+  /* ── 9. Increment discount code uses ───────────────────────────── */
+  if (discountCode) {
+    try {
+      await supabase.rpc('increment_discount_uses', { p_code: discountCode });
+      console.log(`[${reqId}] ✓ Incremented uses for discount code: ${discountCode}`);
+    } catch (err) {
+      console.warn(`[${reqId}] Failed to increment discount uses:`, err.message);
+    }
   }
 
   console.log(`[${reqId}] ── Handler complete ────────────────────────────`);

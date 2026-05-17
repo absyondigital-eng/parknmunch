@@ -54,7 +54,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ---- STATE ---- */
-  let cart = [];
+  let cart            = [];
+  let appliedDiscount = null; // { code, percentage }
 
   /* ---- NAVBAR ---- */
   const navbar    = document.querySelector('.navbar');
@@ -282,10 +283,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalItems = getTotalItems();
     const total      = getTotal();
 
+    const discountedTotal    = appliedDiscount ? total * (1 - appliedDiscount.percentage / 100) : total;
+    const summaryDiscountRow = document.getElementById('summaryDiscountRow');
+    const summaryDiscountLbl = document.getElementById('summaryDiscountLabel');
+    const summaryDiscountAmt = document.getElementById('summaryDiscountAmt');
+
     if (csCountBadge)    csCountBadge.textContent   = totalItems;
     if (summarySubtotal) summarySubtotal.textContent = '£' + total.toFixed(2);
-    if (summaryTotal)    summaryTotal.textContent    = '£' + total.toFixed(2);
+    if (summaryTotal)    summaryTotal.textContent    = '£' + discountedTotal.toFixed(2);
     if (checkoutBtnEl)   checkoutBtnEl.disabled      = cart.length === 0;
+
+    if (summaryDiscountRow) {
+      if (appliedDiscount) {
+        const saving = total - discountedTotal;
+        if (summaryDiscountLbl) summaryDiscountLbl.textContent = `${appliedDiscount.percentage}% off (${appliedDiscount.code})`;
+        if (summaryDiscountAmt) summaryDiscountAmt.textContent = `-£${saving.toFixed(2)}`;
+        summaryDiscountRow.style.display = '';
+      } else {
+        summaryDiscountRow.style.display = 'none';
+      }
+    }
 
     if (cart.length === 0) {
       if (csEmpty) csEmpty.style.display = 'flex';
@@ -695,8 +712,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (umContinueBtn) umContinueBtn.addEventListener('click', () => { closeUpsellModal(); openCheckout(); });
 
   function updateOrderSummaryMini() {
-    const osm      = document.getElementById('osMiniItems');
-    const osmTotal = document.getElementById('osMiniTotal');
+    const osm             = document.getElementById('osMiniItems');
+    const osmTotal        = document.getElementById('osMiniTotal');
+    const osmDiscountRow  = document.getElementById('osmDiscountRow');
+    const osmDiscountLbl  = document.getElementById('osmDiscountLabel');
+    const osmDiscountAmt  = document.getElementById('osmDiscountAmt');
     if (!osm) return;
     osm.innerHTML = cart.map(entry =>
       `<div class="osm-item">
@@ -704,7 +724,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         <span class="osm-p">£${(entryPrice(entry) * entry.qty).toFixed(2)}</span>
       </div>`
     ).join('');
-    if (osmTotal) osmTotal.textContent = '£' + getTotal().toFixed(2);
+    const subtotal        = getTotal();
+    const discountedTotal = appliedDiscount ? subtotal * (1 - appliedDiscount.percentage / 100) : subtotal;
+    if (osmTotal) osmTotal.textContent = '£' + discountedTotal.toFixed(2);
+    if (osmDiscountRow) {
+      if (appliedDiscount) {
+        const saving = subtotal - discountedTotal;
+        if (osmDiscountLbl) osmDiscountLbl.textContent = `${appliedDiscount.percentage}% off (${appliedDiscount.code})`;
+        if (osmDiscountAmt) osmDiscountAmt.textContent = `-£${saving.toFixed(2)}`;
+        osmDiscountRow.style.display = '';
+      } else {
+        osmDiscountRow.style.display = 'none';
+      }
+    }
   }
 
   /* ---- FORM VALIDATION & SUBMISSION ---- */
@@ -809,6 +841,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  async function applyDiscount() {
+    const codeInput = document.getElementById('discountCodeInput');
+    const msgEl     = document.getElementById('discountMsg');
+    const applyBtn  = document.getElementById('applyDiscountBtn');
+    const code      = (codeInput?.value || '').trim().toUpperCase();
+
+    if (!code) {
+      msgEl.textContent   = 'Please enter a discount code.';
+      msgEl.style.color   = '#f87171';
+      return;
+    }
+
+    // If same code already applied, do nothing
+    if (appliedDiscount && appliedDiscount.code === code) {
+      msgEl.textContent = `✓ ${appliedDiscount.percentage}% discount already applied.`;
+      msgEl.style.color = '#4ade80';
+      return;
+    }
+
+    if (applyBtn) applyBtn.disabled = true;
+    msgEl.textContent = 'Checking…';
+    msgEl.style.color = '#a0a0a0';
+
+    try {
+      const db     = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const { data } = await db
+        .from('discount_codes')
+        .select('code, percentage, active, uses, max_uses')
+        .eq('code', code)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (!data || (data.max_uses !== null && data.uses >= data.max_uses)) {
+        appliedDiscount   = null;
+        msgEl.textContent = 'Invalid or expired discount code.';
+        msgEl.style.color = '#f87171';
+      } else {
+        appliedDiscount   = { code: data.code, percentage: data.percentage };
+        msgEl.textContent = `✓ ${data.percentage}% discount applied!`;
+        msgEl.style.color = '#4ade80';
+        renderCart();
+      }
+    } catch {
+      msgEl.textContent = 'Could not verify code. Please try again.';
+      msgEl.style.color = '#f87171';
+    } finally {
+      if (applyBtn) applyBtn.disabled = false;
+    }
+  }
+
+  const applyDiscountBtn = document.getElementById('applyDiscountBtn');
+  const discountCodeInput = document.getElementById('discountCodeInput');
+
+  if (applyDiscountBtn) {
+    applyDiscountBtn.addEventListener('click', applyDiscount);
+  }
+  if (discountCodeInput) {
+    discountCodeInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); applyDiscount(); }
+    });
+    discountCodeInput.addEventListener('input', () => {
+      discountCodeInput.value = discountCodeInput.value.toUpperCase();
+      // Clear applied discount if the user edits the code
+      if (appliedDiscount && discountCodeInput.value !== appliedDiscount.code) {
+        appliedDiscount = null;
+        renderCart();
+        const msgEl = document.getElementById('discountMsg');
+        if (msgEl) { msgEl.textContent = ''; }
+      }
+    });
+  }
+
   async function redirectToStripe(name, phone, reg) {
     const submitBtn  = checkoutForm.querySelector('.form-submit');
     const stripeErr  = document.getElementById('stripeError');
@@ -830,7 +934,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const res = await fetch('/.netlify/functions/create-checkout-session', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ items, customer }),
+        body:    JSON.stringify({ items, customer, discountCode: appliedDiscount?.code || null }),
       });
 
       const data = await res.json();
