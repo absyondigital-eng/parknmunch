@@ -1,4 +1,24 @@
 export function printReceipt(order) {
+  // If running inside the Park N Munch Android app, use the native USB print bridge
+  if (window.AndroidPrint) {
+    window.AndroidPrint.printReceipt(JSON.stringify({
+      id:                  order.id,
+      created_at:          order.created_at,
+      customer_name:       order.customer_name,
+      customer_phone:      order.customer_phone,
+      car_registration:    order.car_registration,
+      bay_number:          order.bay_number || '',
+      order_items:         order.order_items,
+      total:               order.total,
+      subtotal:            order.subtotal || order.total,
+      discount_code:       order.discount_code || '',
+      discount_amount:     order.discount_amount || 0,
+      notes:               order.notes || '',
+    }))
+    return
+  }
+
+  // Fallback: browser print window (used when running in a regular browser)
   const items = Array.isArray(order.order_items) ? order.order_items : []
   const created = new Date(order.created_at)
   const dateStr = created.toLocaleDateString('en-GB')
