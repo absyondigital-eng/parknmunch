@@ -3,6 +3,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
 import { printReceipt } from '../../lib/printReceipt'
+import { stopOrderAlert } from '../../hooks/useNewOrderAlert'
 
 const STATUS_TRANSITIONS = {
   new: ['completed'],
@@ -34,6 +35,7 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
   const [bayValue, setBayValue] = useState(order.bay_number || '')
   const [savingBay, setSavingBay] = useState(false)
   const [changingStatus, setChangingStatus] = useState(null)
+  const [accepted, setAccepted] = useState(false)
   const { toast } = useToast()
 
   const isNew = order.order_status === 'new'
@@ -71,6 +73,12 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
     setEditingBay(false)
   }
 
+  function handleAccept() {
+    stopOrderAlert()
+    printReceipt(order)
+    setAccepted(true)
+  }
+
   function handlePrint() {
     printReceipt(order)
   }
@@ -78,7 +86,7 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
   return (
     <div
       className={`relative bg-[#141414] border border-white/[0.07] rounded-2xl overflow-hidden border-l-4 ${borderColor} transition-all hover:border-white/[0.12] ${
-        isNew ? 'animate-pulseRedGlow' : ''
+        isNew && !accepted ? 'animate-pulseRedGlow' : ''
       }`}
     >
       <div className="p-4 sm:p-5">
@@ -196,13 +204,22 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
             Details
           </button>
 
-          {/* Print */}
-          <button
-            onClick={handlePrint}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/10 text-[#a0a0a0] hover:text-[#f0f0f0] hover:bg-white/[0.06] transition-all"
-          >
-            🖨 Print
-          </button>
+          {/* Accept (new orders only) or Print (accepted/other statuses) */}
+          {isNew && !accepted ? (
+            <button
+              onClick={handleAccept}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-green-500/40 bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-all"
+            >
+              ✓ Accept
+            </button>
+          ) : (
+            <button
+              onClick={handlePrint}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/10 text-[#a0a0a0] hover:text-[#f0f0f0] hover:bg-white/[0.06] transition-all"
+            >
+              🖨 Print
+            </button>
+          )}
 
           {/* Refund */}
           {order.order_status === 'completed' && (

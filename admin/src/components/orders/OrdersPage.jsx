@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useOrders } from '../../hooks/useOrders'
 import { useToast } from '../../context/ToastContext'
-import { playNotificationSound } from '../../lib/audio'
 import { OrderCard } from './OrderCard'
 import { OrderDetailModal } from './OrderDetailModal'
 import { RefundModal } from '../refunds/RefundModal'
@@ -28,7 +27,6 @@ export default function OrdersPage() {
 
   const handleNewOrder = useCallback(
     (order) => {
-      playNotificationSound()
       toast.info(`New order received from ${order.customer_name || 'a customer'}!`)
       topRef.current?.scrollIntoView({ behavior: 'smooth' })
     },

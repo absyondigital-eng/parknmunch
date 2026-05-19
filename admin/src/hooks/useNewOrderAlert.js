@@ -3,6 +3,12 @@ import { supabase } from '../lib/supabase'
 
 const alertAudio = new Audio('/new-order-sound.mp3')
 alertAudio.volume = 1.0
+alertAudio.loop = true
+
+export function stopOrderAlert() {
+  alertAudio.pause()
+  alertAudio.currentTime = 0
+}
 
 function playOrderSound() {
   try {
