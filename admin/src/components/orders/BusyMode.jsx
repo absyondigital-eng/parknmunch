@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 
 export function BusyMode() {
@@ -6,6 +6,7 @@ export function BusyMode() {
   const [showPopup, setShowPopup] = useState(false)
   const [pendingTime, setPendingTime] = useState(15)
   const [saving, setSaving] = useState(false)
+  const channelName = useRef('settings-busy-' + Math.random().toString(36).slice(2)).current
 
   useEffect(() => {
     async function load() {
@@ -15,7 +16,7 @@ export function BusyMode() {
     load()
 
     const channel = supabase
-      .channel('settings-busy')
+      .channel(channelName)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' }, (payload) => {
         setSettings(payload.new)
       })
