@@ -106,7 +106,7 @@ ${order.notes ? `<div class="dashes"></div><div class="bold">NOTES</div><div>${o
 
 <div class="dashes"></div>
 <div class="center" style="margin-top:6px;font-size:8pt;">Thank you! Enjoy your meal 🍔</div>
-<div class="center" style="font-size:7pt;color:#555;margin-top:2px;">parknmunch.co.uk</div>
+<div class="center" style="font-size:7pt;color:#555;margin-top:2px;">parknmunch.com</div>
 </body>
 </html>`
 

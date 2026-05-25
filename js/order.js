@@ -839,7 +839,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (!valid || cart.length === 0) return;
-      redirectToStripe(nameVal, phoneVal, regVal);
+      const emailVal = (document.getElementById('custEmail')?.value || '').trim().toLowerCase();
+      redirectToStripe(nameVal, phoneVal, regVal, emailVal);
     });
   }
 
@@ -915,7 +916,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  async function redirectToStripe(name, phone, reg) {
+  async function redirectToStripe(name, phone, reg, email = '') {
     const submitBtn  = checkoutForm.querySelector('.form-submit');
     const stripeErr  = document.getElementById('stripeError');
     const original   = submitBtn.innerHTML;
@@ -931,7 +932,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         quantity: entry.qty,
       }));
 
-      const customer = { name, phone, carReg: reg };
+      const customer = { name, phone, carReg: reg, email };
 
       const res = await fetch('/.netlify/functions/create-checkout-session', {
         method:  'POST',

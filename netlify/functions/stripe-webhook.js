@@ -118,11 +118,12 @@ exports.handler = async (event) => {
   const metadata = session.metadata || {};
   console.log(`[${reqId}] Metadata raw:`, JSON.stringify(metadata));
 
-  const customerName  = metadata.name   || '';
-  const customerPhone = metadata.phone  || '';
-  const carReg        = metadata.carReg || '';
-  const orderRaw      = metadata.order  || '[]';
-  const discountCode  = metadata.discount_code || '';
+  const customerName  = metadata.name           || '';
+  const customerPhone = metadata.phone          || '';
+  const carReg        = metadata.carReg         || '';
+  const customerEmail = metadata.customer_email || '';
+  const orderRaw      = metadata.order          || '[]';
+  const discountCode  = metadata.discount_code  || '';
   const discountPct   = parseInt(metadata.discount_pct || '0', 10);
 
   if (!customerName)  console.warn(`[${reqId}] metadata.name is empty`);
@@ -171,6 +172,7 @@ exports.handler = async (event) => {
     customer_name:       customerName,
     customer_phone:      customerPhone,
     car_registration:    carReg,
+    customer_email:      customerEmail || null,
     bay_number:          null,
     order_items:         orderItems,
     subtotal:            subtotalPounds,

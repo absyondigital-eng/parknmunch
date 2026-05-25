@@ -89,12 +89,13 @@ exports.handler = async (event) => {
       cancel_url: `${baseUrl}/order.html`,
       discounts: stripeCoupons.length ? stripeCoupons : undefined,
       metadata: {
-        name:          customer.name,
-        phone:         customer.phone,
-        carReg:        customer.carReg,
-        order:         orderMeta,
-        discount_code: discount ? discount.code : '',
-        discount_pct:  discount ? String(discount.percentage) : '',
+        name:           customer.name,
+        phone:          customer.phone,
+        carReg:         customer.carReg,
+        customer_email: customer.email || '',
+        order:          orderMeta,
+        discount_code:  discount ? discount.code : '',
+        discount_pct:   discount ? String(discount.percentage) : '',
       },
     });
 
