@@ -746,9 +746,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const regInput       = document.getElementById('carReg');
   const nameInput      = document.getElementById('custName');
   const phoneInput     = document.getElementById('custPhone');
+  const emailInput     = document.getElementById('custEmail');
   const regError       = document.getElementById('regError');
   const nameError      = document.getElementById('nameError');
   const phoneError     = document.getElementById('phoneError');
+  const emailError     = document.getElementById('emailError');
   const successOverlay = document.getElementById('successOverlay');
   const scClose        = document.getElementById('scClose');
   const scRegDisplay   = document.getElementById('scRegDisplay');
@@ -787,6 +789,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       phoneInput.value = clean;
       phoneInput.classList.remove('error');
       phoneError.classList.remove('show');
+    });
+  }
+
+  if (emailInput) {
+    emailInput.addEventListener('input', () => {
+      emailInput.classList.remove('error');
+      emailError.classList.remove('show');
     });
   }
 
@@ -838,8 +847,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         regError.classList.remove('show');
       }
 
+      const emailVal = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+        emailInput.classList.add('error');
+        emailError.textContent = emailVal
+          ? '⚠ Please enter a valid email address'
+          : '⚠ Email address is required';
+        emailError.classList.add('show');
+        valid = false;
+      } else {
+        emailInput.classList.remove('error');
+        emailError.classList.remove('show');
+      }
+
       if (!valid || cart.length === 0) return;
-      const emailVal = (document.getElementById('custEmail')?.value || '').trim().toLowerCase();
       redirectToStripe(nameVal, phoneVal, regVal, emailVal);
     });
   }
@@ -916,7 +937,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  async function redirectToStripe(name, phone, reg, email = '') {
+  async function redirectToStripe(name, phone, reg, email) {
     const submitBtn  = checkoutForm.querySelector('.form-submit');
     const stripeErr  = document.getElementById('stripeError');
     const original   = submitBtn.innerHTML;
