@@ -2,6 +2,22 @@
    Park N Munch — Home Page JavaScript
    ============================================================ */
 
+/* ---- Garage open/closed badge ---- */
+function updateGarageBadge() {
+  const badge  = document.getElementById('garageBadge');
+  const status = document.getElementById('garageStatus');
+  if (!badge || !status) return;
+  if (isOpen()) {
+    badge.classList.remove('closed');
+    status.textContent = 'GARAGE IS OPEN';
+  } else {
+    badge.classList.add('closed');
+    status.textContent = 'GARAGE IS CLOSED';
+  }
+}
+updateGarageBadge();
+setInterval(updateGarageBadge, 60000);
+
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ---- Navbar ---- */

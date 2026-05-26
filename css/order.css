@@ -5,6 +5,46 @@
 .order-page { padding-top: 70px; }
 
 /* ============================================================
+   CLOSED BANNER
+   ============================================================ */
+.closed-banner {
+  background: rgba(239, 68, 68, 0.08);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.22);
+  padding: 14px 24px;
+}
+.closed-banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: var(--max);
+  margin: 0 auto;
+}
+.cb-lock { font-size: 1.4rem; flex-shrink: 0; }
+.cb-text strong {
+  display: block;
+  color: #f87171;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cb-text span {
+  color: var(--text-2);
+  font-size: 0.8rem;
+}
+
+/* Disable add-to-cart buttons and checkout when shop is closed */
+.shop-closed .add-btn {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.shop-closed .checkout-btn:not([data-force]) {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================================
    ORDER HEADER
    ============================================================ */
 .order-header {

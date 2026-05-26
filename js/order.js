@@ -2,7 +2,22 @@
    Park N Munch — Order Page JavaScript
    ============================================================ */
 
+/* ---- Open/closed state for the order page ---- */
+function applyClosedState() {
+  const banner = document.getElementById('closedBanner');
+  if (isOpen()) {
+    document.body.classList.remove('shop-closed');
+    if (banner) banner.style.display = 'none';
+  } else {
+    document.body.classList.add('shop-closed');
+    if (banner) banner.style.display = '';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+
+  applyClosedState();
+  setInterval(applyClosedState, 60000);
 
   /* ---- LOADING STATE ---- */
   const menuLoadingEl = document.getElementById('menuLoading');
@@ -232,6 +247,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ---- CART CORE ---- */
   function addToCart(item, customisation, btn, note = '') {
+    if (!isOpen()) {
+      showToast("We're currently closed — come back during opening hours!");
+      return;
+    }
     const cartKey  = makeCartKey(item, customisation);
     const existing = cart.find(c => c.cartKey === cartKey);
     if (existing) {
@@ -802,6 +821,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (checkoutForm) {
     checkoutForm.addEventListener('submit', e => {
       e.preventDefault();
+      if (!isOpen()) return;
       let valid = true;
 
       const nameVal = sanitiseText(nameInput.value);
