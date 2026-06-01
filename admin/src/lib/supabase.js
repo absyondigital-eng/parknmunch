@@ -9,11 +9,30 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
+// iOS Safari private browsing disables localStorage entirely — this wrapper
+// prevents a crash by falling back to in-memory storage silently.
+const safeStorage = (() => {
+  try {
+    const test = '__sb_test__'
+    localStorage.setItem(test, test)
+    localStorage.removeItem(test)
+    return localStorage
+  } catch {
+    const mem = {}
+    return {
+      getItem:    (k) => mem[k] ?? null,
+      setItem:    (k, v) => { mem[k] = String(v) },
+      removeItem: (k) => { delete mem[k] },
+    }
+  }
+})()
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: false,
+    storage: safeStorage,
   },
   realtime: {
     params: {
