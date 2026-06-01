@@ -97,9 +97,16 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
     return monthOrders
   }, [monthOrders, mode, selectedDay])
 
+  const activeRefunds = useMemo(() => {
+    if (mode === 'day' && selectedDay) {
+      return monthRefunds.filter(r => isSameDay(new Date(r.created_at), selectedDay))
+    }
+    return monthRefunds
+  }, [monthRefunds, mode, selectedDay])
+
   const stats = useMemo(
-    () => computeStats(activeOrders, monthRefunds),
-    [activeOrders, monthRefunds]
+    () => computeStats(activeOrders, activeRefunds),
+    [activeOrders, activeRefunds]
   )
 
   // Per-day totals across the whole month (for the revenue chart + calendar dots)
