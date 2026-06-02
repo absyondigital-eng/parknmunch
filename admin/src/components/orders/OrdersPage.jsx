@@ -20,12 +20,14 @@ import { Spinner } from '../ui/Spinner'
 
 const FILTERS = [
   { key: 'new',       label: 'New' },
+  { key: 'today',     label: 'Today' },
   { key: 'completed', label: 'Completed' },
   { key: 'all',       label: 'All' },
 ]
 
 const FILTER_BADGE_COLOR = {
   new:       'bg-red-500 text-white',
+  today:     'bg-blue-500 text-white',
   completed: 'bg-green-500 text-white',
   all:       'bg-[#9333ea] text-white',
 }
@@ -144,6 +146,11 @@ export default function OrdersPage() {
     return acc
   }, {})
 
+  const todayCount = useMemo(
+    () => orders.filter((o) => isToday(new Date(o.created_at))).length,
+    [orders]
+  )
+
   // Dates that have at least one completed order (for calendar dots)
   const completedOrderDates = useMemo(
     () =>
@@ -160,6 +167,8 @@ export default function OrdersPage() {
     let base =
       activeFilter === 'all'
         ? orders
+        : activeFilter === 'today'
+        ? orders.filter((o) => isToday(new Date(o.created_at)))
         : orders.filter((o) => o.order_status === activeFilter)
 
     if (activeFilter === 'completed') {
@@ -207,6 +216,7 @@ export default function OrdersPage() {
   function emptyTitle() {
     if (activeFilter === 'all') return 'No orders yet'
     if (activeFilter === 'new') return 'No new orders'
+    if (activeFilter === 'today') return 'No orders today'
     if (completedView === 'day' && completedDay)
       return `No completed orders on ${format(completedDay, 'd MMM')}`
     if (completedView === 'month')
@@ -217,6 +227,7 @@ export default function OrdersPage() {
   function emptySubtitle() {
     if (activeFilter === 'all') return 'Orders will appear here when customers place them.'
     if (activeFilter === 'new') return 'All caught up! New orders will appear here.'
+    if (activeFilter === 'today') return "Today's orders will appear here as they come in."
     if (completedView === 'day' && completedDay) return 'Try a different day.'
     if (completedView === 'month') return 'Try a different month.'
     return 'Completed orders will appear here.'
@@ -266,7 +277,7 @@ export default function OrdersPage() {
           {/* Status filter tabs */}
           <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1">
             {FILTERS.map((f) => {
-              const count    = f.key === 'all' ? orders.length : (countsByStatus[f.key] || 0)
+              const count    = f.key === 'all' ? orders.length : f.key === 'today' ? todayCount : (countsByStatus[f.key] || 0)
               const isActive = activeFilter === f.key
               const badgeColor = FILTER_BADGE_COLOR[f.key] || 'bg-[#555] text-white'
 
@@ -439,7 +450,7 @@ export default function OrdersPage() {
         {!loading && !error && filteredOrders.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-20 h-20 rounded-2xl bg-[#141414] border border-white/[0.07] flex items-center justify-center text-4xl">
-              {activeFilter === 'new' ? '🎉' : activeFilter === 'completed' ? '✅' : '📋'}
+              {activeFilter === 'new' ? '🎉' : activeFilter === 'today' ? '📅' : activeFilter === 'completed' ? '✅' : '📋'}
             </div>
             <div className="text-center">
               <p className="text-[#f0f0f0] font-medium mb-1">{emptyTitle()}</p>
