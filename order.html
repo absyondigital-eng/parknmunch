@@ -450,6 +450,80 @@
 
 
   <!-- ============================================================
+       MUNCHBOX CUSTOMISATION MODAL
+       ============================================================ -->
+  <div class="burger-modal-overlay" id="munchboxModalOverlay" role="dialog" aria-modal="true" aria-labelledby="mmItemName">
+    <div class="burger-modal-card">
+
+      <!-- Header -->
+      <div class="bm-header">
+        <div>
+          <div class="bm-title" id="mmItemName">Munchbox</div>
+          <div class="bm-desc" id="mmItemDesc"></div>
+        </div>
+        <div class="bm-header-right">
+          <div class="bm-current-price" id="mmCurrentPrice">£0.00</div>
+          <button class="bm-close" id="mmClose" aria-label="Close modal">✕</button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="bm-body">
+
+        <!-- Mods / Extras -->
+        <div>
+          <div class="bm-section-label">
+            Mods
+            <span style="font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.3)">- optional</span>
+          </div>
+          <div class="bm-addons">
+            <label class="bm-addon-row">
+              <input type="checkbox" class="mm-addon-cb" data-addon-id="smash">
+              <span class="bm-addon-name">Smash patty</span>
+              <span class="bm-addon-price">+£1.49</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="mm-addon-cb" data-addon-id="fillet">
+              <span class="bm-addon-name">Chicken fillet</span>
+              <span class="bm-addon-price">+£1.00</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="mm-addon-cb" data-addon-id="donner">
+              <span class="bm-addon-name">Donner</span>
+              <span class="bm-addon-price">+£1.49</span>
+            </label>
+            <label class="bm-addon-row">
+              <input type="checkbox" class="mm-addon-cb" data-addon-id="cheese">
+              <span class="bm-addon-name">Cheese</span>
+              <span class="bm-addon-price">+£0.30</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="bm-section-label" for="mmNote">
+            Add notes
+            <span style="font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.3)">- optional</span>
+          </label>
+          <textarea id="mmNote" class="bm-note-input"
+            placeholder="Any special requests for your munchbox…"
+            rows="2"></textarea>
+        </div>
+
+      </div><!-- /bm-body -->
+
+      <!-- Footer -->
+      <div class="bm-footer">
+        <div class="bm-base-note">Base price: <span id="mmBasePrice">£0.00</span></div>
+        <button class="bm-submit" id="mmSubmit">Add to Cart →</button>
+      </div>
+
+    </div><!-- /burger-modal-card -->
+  </div><!-- /munchboxModalOverlay -->
+
+
+  <!-- ============================================================
        CANS DRINK SELECTION MODAL
        ============================================================ -->
   <div class="cans-modal-overlay" id="cansModalOverlay" role="dialog" aria-modal="true" aria-label="Choose your drink">

@@ -207,6 +207,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           openGarageModal();
         } else if (item.hasDrinkChoice) {
           openCansModal(item);
+        } else if (item.category === 'box-deals') {
+          openMunchboxModal(item);
         } else {
           addToCart(item, null, btn);
         }
@@ -532,6 +534,67 @@ document.addEventListener('DOMContentLoaded', async () => {
       const note = (document.getElementById('bmNote')?.value || '').trim();
       addToCart(modalItem, customisation, null, note);
       closeBurgerModal();
+    });
+  }
+
+  /* ---- MUNCHBOX CUSTOMISATION MODAL ---- */
+  const munchboxModalOverlay = document.getElementById('munchboxModalOverlay');
+  let munchboxModalItem = null;
+
+  function updateMunchboxPrice() {
+    if (!munchboxModalItem) return;
+    let price = munchboxModalItem.price;
+    munchboxModalOverlay.querySelectorAll('.mm-addon-cb:checked').forEach(cb => {
+      const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
+      if (addon) price += addon.price;
+    });
+    document.getElementById('mmCurrentPrice').textContent = '£' + price.toFixed(2);
+  }
+
+  function openMunchboxModal(item) {
+    munchboxModalItem = item;
+    document.getElementById('mmItemName').textContent  = item.name;
+    document.getElementById('mmItemDesc').textContent  = item.desc || '';
+    document.getElementById('mmBasePrice').textContent = '£' + item.price.toFixed(2);
+    munchboxModalOverlay.querySelectorAll('.mm-addon-cb').forEach(c => c.checked = false);
+    const mmNoteEl = document.getElementById('mmNote');
+    if (mmNoteEl) mmNoteEl.value = '';
+    updateMunchboxPrice();
+    munchboxModalOverlay.classList.add('open');
+    document.body.classList.add('modal-active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMunchboxModal() {
+    munchboxModalOverlay.classList.remove('open');
+    document.body.classList.remove('modal-active');
+    document.body.style.overflow = '';
+    munchboxModalItem = null;
+  }
+
+  if (munchboxModalOverlay) {
+    munchboxModalOverlay.addEventListener('click', e => {
+      if (e.target === munchboxModalOverlay) closeMunchboxModal();
+    });
+
+    document.getElementById('mmClose').addEventListener('click', closeMunchboxModal);
+
+    munchboxModalOverlay.querySelectorAll('.mm-addon-cb').forEach(cb => {
+      cb.addEventListener('change', updateMunchboxPrice);
+    });
+
+    document.getElementById('mmSubmit').addEventListener('click', () => {
+      const checkedAddons = [...munchboxModalOverlay.querySelectorAll('.mm-addon-cb:checked')]
+        .map(cb => BURGER_ADDONS.find(a => a.id === cb.dataset.addonId))
+        .filter(Boolean);
+
+      const customisation = checkedAddons.length > 0
+        ? { style: null, addons: checkedAddons, meal: null }
+        : null;
+
+      const note = (document.getElementById('mmNote')?.value || '').trim();
+      addToCart(munchboxModalItem, customisation, null, note);
+      closeMunchboxModal();
     });
   }
 
