@@ -21,8 +21,9 @@ export function printReceipt(order) {
   // Fallback: browser print window (used when running in a regular browser)
   const items = Array.isArray(order.order_items) ? order.order_items : []
   const created = new Date(order.created_at)
-  const dateStr = created.toLocaleDateString('en-GB')
-  const timeStr = created.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const tz = 'Europe/London'
+  const dateStr = created.toLocaleDateString('en-GB', { timeZone: tz })
+  const timeStr = created.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz })
   const orderId = String(order.id).slice(-6).toUpperCase()
 
   const itemRows = items.map(item => {
