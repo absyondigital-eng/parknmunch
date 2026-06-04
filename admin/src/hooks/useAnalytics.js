@@ -151,5 +151,5 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
     [monthOrders]
   )
 
-  return { stats, dailyData, orderDates, loading, refetch: fetchMonth }
+  return { stats, dailyData, orderDates, activeOrders, loading, refetch: fetchMonth }
 }

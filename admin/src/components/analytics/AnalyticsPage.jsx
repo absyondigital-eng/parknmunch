@@ -180,6 +180,103 @@ const CustomTooltipBar = ({ active, payload, label }) => {
   )
 }
 
+// ─── Analytics Order Card (read-only, shown in day view) ────────────────────
+
+function parseOrderItems(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') { try { return JSON.parse(raw) } catch {} }
+  return []
+}
+
+function AnalyticsOrderCard({ order }) {
+  const items     = parseOrderItems(order.order_items)
+  const createdAt = new Date(order.created_at)
+  const timeStr   = format(createdAt, 'HH:mm')
+  // Orders placed after midnight but before 4pm belong to the previous trading day
+  const isNextDay = createdAt.getHours() < 16
+  const statusColor = STATUS_COLORS[order.order_status] || '#555'
+  const statusLabel = STATUS_LABELS[order.order_status] || order.order_status
+
+  return (
+    <div className="bg-[#0f0f0f] border border-white/[0.07] rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-start justify-between px-5 py-4 border-b border-white/[0.05]">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[#f0f0f0] font-semibold text-sm">
+              {order.customer_name || 'Unknown'}
+            </span>
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{ background: statusColor + '28', color: statusColor }}
+            >
+              {statusLabel}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[11px] text-[#444] font-mono">
+              #{String(order.id).slice(0, 8).toUpperCase()}
+            </span>
+            <span className="text-[#333]">·</span>
+            <span className="text-[11px] text-[#a0a0a0]">{timeStr}</span>
+            {isNextDay && (
+              <span className="text-[10px] text-[#555] bg-white/[0.05] border border-white/[0.06] px-1.5 py-0.5 rounded-md leading-none">
+                +1 day
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="text-right shrink-0 ml-4">
+          <div className="text-[#f0f0f0] font-bold text-base">
+            £{Number(order.total || 0).toFixed(2)}
+          </div>
+          {order.subtotal && Number(order.subtotal) !== Number(order.total) && (
+            <div className="text-[11px] text-[#555]">sub £{Number(order.subtotal).toFixed(2)}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Items */}
+      {items.length > 0 && (
+        <div className="px-5 py-3 border-b border-white/[0.05] space-y-1.5">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-start justify-between gap-4">
+              <span className="text-sm text-[#d0d0d0] leading-snug">
+                <span className="text-[#666]">{item.quantity}×</span> {item.name}
+              </span>
+              <span className="text-sm text-[#555] shrink-0">
+                £{Number(item.price || 0).toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Customer + meta */}
+      <div className="px-5 py-3 flex flex-wrap gap-x-4 gap-y-1.5">
+        {order.car_registration && (
+          <span className="text-xs text-[#888]">🚗 {order.car_registration}</span>
+        )}
+        {order.bay_number && (
+          <span className="text-xs text-[#888]">📍 Bay {order.bay_number}</span>
+        )}
+        {order.customer_phone && (
+          <span className="text-xs text-[#888]">📞 {order.customer_phone}</span>
+        )}
+        {order.customer_email && (
+          <span className="text-xs text-[#888]">✉ {order.customer_email}</span>
+        )}
+        {order.notes && (
+          <span className="text-xs text-[#888] w-full">📝 {order.notes}</span>
+        )}
+        {order.discount_code && (
+          <span className="text-xs text-[#888]">🏷 {order.discount_code}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
@@ -187,7 +284,7 @@ export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState(startOfMonth(new Date()))
   const [selectedDay,   setSelectedDay]   = useState(null)
 
-  const { stats, dailyData, orderDates, loading, refetch } = useAnalytics({
+  const { stats, dailyData, orderDates, activeOrders, loading, refetch } = useAnalytics({
     mode,
     selectedMonth,
     selectedDay,
@@ -494,6 +591,44 @@ export default function AnalyticsPage() {
             )}
           </div>
         </div>
+
+        {/* Day mode: full order list for the selected trading day */}
+        {mode === 'day' && selectedDay && (
+          <section>
+            <div className="bg-[#141414] border border-white/[0.07] rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-[#f0f0f0]">Orders</h2>
+                  <p className="text-xs text-[#555] mt-0.5">
+                    {format(selectedDay, 'EEE d MMM yyyy')} · 4pm – close
+                    {activeOrders.length > 0 && ` · ${activeOrders.length} order${activeOrders.length !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="p-4 space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-28 bg-white/[0.04] rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : activeOrders.length === 0 ? (
+                <div className="p-10 text-center">
+                  <div className="text-3xl mb-3">📋</div>
+                  <p className="text-[#555] text-sm">No orders on this day</p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-3">
+                  {[...activeOrders]
+                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                    .map((order) => (
+                      <AnalyticsOrderCard key={order.id} order={order} />
+                    ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Month mode: daily breakdown table */}
         {mode === 'month' && (
