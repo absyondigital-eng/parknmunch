@@ -27,6 +27,8 @@ export function printReceipt(order) {
 
   // Fallback: browser print window (used when running in a regular browser)
   const items = Array.isArray(order.order_items) ? order.order_items : []
+  const dateStr = displayDate
+  const timeStr = displayTime
   const orderId = String(order.id).slice(-6).toUpperCase()
 
   const itemRows = items.map(item => {
@@ -79,8 +81,8 @@ export function printReceipt(order) {
   <span class="bold">#${orderId}</span>
 </div>
 <div class="row">
-  <span>${displayDate}</span>
-  <span>${displayTime}</span>
+  <span>${dateStr}</span>
+  <span>${timeStr}</span>
 </div>
 
 <div class="dashes"></div>
