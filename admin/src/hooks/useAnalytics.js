@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns'
+import { format, isSameDay, startOfMonth, endOfMonth, addMonths, eachDayOfInterval } from 'date-fns'
 import { supabase } from '../lib/supabase'
+import { tradingDate } from '../lib/tradingDay'
 
 function computeStats(orders, refunds) {
   const revenueOrders = orders.filter(o => o.order_status !== 'refunded')
@@ -35,15 +36,33 @@ function computeStats(orders, refunds) {
 
 // mode          — 'day' | 'month'
 // selectedMonth — first-of-month Date; drives which month is fetched
-// selectedDay   — Date; used when mode === 'day' to filter within the fetched month
+// selectedDay   — Date (trading day); used when mode === 'day'
+//
+// Trading day: sessions run 4pm–close (1am/2am next calendar day).
+// We subtract 16 hours from every timestamp to get its trading date so that
+// e.g. Wednesday 00:30 counts as Tuesday's sales, not Wednesday's.
 export function useAnalytics({ mode, selectedMonth, selectedDay }) {
   const [monthOrders,  setMonthOrders]  = useState([])
   const [monthRefunds, setMonthRefunds] = useState([])
   const [loading,      setLoading]      = useState(true)
   const channelRef = useRef(null)
 
-  const monthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth])
-  const monthEnd   = useMemo(() => endOfMonth(selectedMonth),   [selectedMonth])
+  // Calendar month boundaries — used for day iteration and channel naming
+  const calMonthStart = useMemo(() => startOfMonth(selectedMonth), [selectedMonth])
+  const calMonthEnd   = useMemo(() => endOfMonth(selectedMonth),   [selectedMonth])
+
+  // Supabase fetch bounds shifted for the 4pm business day:
+  //   "June trading month" = timestamps from June 1 16:00 to July 1 15:59:59
+  //   (because June 1 session starts at 16:00 and June 30 session ends ~July 1 02:00)
+  const fetchStart = useMemo(() => {
+    const d = startOfMonth(selectedMonth)
+    return new Date(d.getFullYear(), d.getMonth(), 1, 16, 0, 0, 0)
+  }, [selectedMonth])
+
+  const fetchEnd = useMemo(() => {
+    const d = startOfMonth(addMonths(selectedMonth, 1))
+    return new Date(d.getFullYear(), d.getMonth(), 1, 15, 59, 59, 999)
+  }, [selectedMonth])
 
   const fetchMonth = useCallback(async () => {
     setLoading(true)
@@ -51,13 +70,13 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
       const [{ data: orders, error: oErr }, { data: refunds, error: rErr }] = await Promise.all([
         supabase.from('orders')
           .select('*')
-          .gte('created_at', monthStart.toISOString())
-          .lte('created_at', monthEnd.toISOString())
+          .gte('created_at', fetchStart.toISOString())
+          .lte('created_at', fetchEnd.toISOString())
           .order('created_at', { ascending: false }),
         supabase.from('refunds')
           .select('*')
-          .gte('created_at', monthStart.toISOString())
-          .lte('created_at', monthEnd.toISOString()),
+          .gte('created_at', fetchStart.toISOString())
+          .lte('created_at', fetchEnd.toISOString()),
       ])
       if (oErr) throw oErr
       if (rErr) throw rErr
@@ -68,12 +87,12 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
     } finally {
       setLoading(false)
     }
-  }, [monthStart, monthEnd])
+  }, [fetchStart, fetchEnd])
 
   useEffect(() => {
     fetchMonth()
 
-    const channelName = 'analytics-' + format(monthStart, 'yyyy-MM')
+    const channelName = 'analytics-' + format(calMonthStart, 'yyyy-MM')
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders'  }, fetchMonth)
@@ -87,19 +106,19 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
         channelRef.current = null
       }
     }
-  }, [fetchMonth, monthStart])
+  }, [fetchMonth, calMonthStart])
 
-  // Filter to the selected day when in day mode
+  // Filter to the selected trading day when in day mode
   const activeOrders = useMemo(() => {
     if (mode === 'day' && selectedDay) {
-      return monthOrders.filter(o => isSameDay(new Date(o.created_at), selectedDay))
+      return monthOrders.filter(o => isSameDay(tradingDate(o.created_at), selectedDay))
     }
     return monthOrders
   }, [monthOrders, mode, selectedDay])
 
   const activeRefunds = useMemo(() => {
     if (mode === 'day' && selectedDay) {
-      return monthRefunds.filter(r => isSameDay(new Date(r.created_at), selectedDay))
+      return monthRefunds.filter(r => isSameDay(tradingDate(r.created_at), selectedDay))
     }
     return monthRefunds
   }, [monthRefunds, mode, selectedDay])
@@ -109,14 +128,14 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
     [activeOrders, activeRefunds]
   )
 
-  // Per-day totals across the whole month (for the revenue chart + calendar dots)
+  // Per-trading-day totals across the whole month (for the revenue chart + calendar dots)
   const dailyData = useMemo(() => {
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
+    const days = eachDayOfInterval({ start: calMonthStart, end: calMonthEnd })
     return days.map(day => {
       const dayRevOrders = monthOrders.filter(
-        o => isSameDay(new Date(o.created_at), day) && o.order_status !== 'refunded'
+        o => isSameDay(tradingDate(o.created_at), day) && o.order_status !== 'refunded'
       )
-      const allDayOrders = monthOrders.filter(o => isSameDay(new Date(o.created_at), day))
+      const allDayOrders = monthOrders.filter(o => isSameDay(tradingDate(o.created_at), day))
       return {
         date:     format(day, 'd'),
         fullDate: format(day, 'yyyy-MM-dd'),
@@ -124,11 +143,11 @@ export function useAnalytics({ mode, selectedMonth, selectedDay }) {
         count:    allDayOrders.length,
       }
     })
-  }, [monthOrders, monthStart, monthEnd])
+  }, [monthOrders, calMonthStart, calMonthEnd])
 
-  // Set of 'yyyy-MM-dd' strings for days that have at least one order
+  // Set of 'yyyy-MM-dd' trading-date strings for days that have at least one order
   const orderDates = useMemo(
-    () => new Set(monthOrders.map(o => format(new Date(o.created_at), 'yyyy-MM-dd'))),
+    () => new Set(monthOrders.map(o => format(tradingDate(o.created_at), 'yyyy-MM-dd'))),
     [monthOrders]
   )
 

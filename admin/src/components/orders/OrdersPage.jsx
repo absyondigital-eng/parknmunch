@@ -11,6 +11,7 @@ import {
   isSameDay,
   isToday,
 } from 'date-fns'
+import { tradingDate } from '../../lib/tradingDay'
 import { useOrders } from '../../hooks/useOrders'
 import { useToast } from '../../context/ToastContext'
 import { OrderCard } from './OrderCard'
@@ -146,36 +147,38 @@ export default function OrdersPage() {
     return acc
   }, {})
 
-  const todayCount = useMemo(
-    () => orders.filter((o) => isToday(new Date(o.created_at))).length,
-    [orders]
-  )
+  const todayCount = useMemo(() => {
+    const nowTrading = tradingDate(new Date())
+    return orders.filter((o) => isSameDay(tradingDate(o.created_at), nowTrading)).length
+  }, [orders])
 
-  // Dates that have at least one completed order (for calendar dots)
+  // Dates that have at least one completed order (calendar dots use trading date)
   const completedOrderDates = useMemo(
     () =>
       new Set(
         orders
           .filter((o) => o.order_status === 'completed')
-          .map((o) => format(new Date(o.created_at), 'yyyy-MM-dd'))
+          .map((o) => format(tradingDate(o.created_at), 'yyyy-MM-dd'))
       ),
     [orders]
   )
 
-  // Apply status + optional date filter
+  // Apply status + optional date filter (all date comparisons use trading date)
   const filteredOrders = useMemo(() => {
+    const nowTrading = tradingDate(new Date())
+
     let base =
       activeFilter === 'all'
         ? orders
         : activeFilter === 'today'
-        ? orders.filter((o) => isToday(new Date(o.created_at)))
+        ? orders.filter((o) => isSameDay(tradingDate(o.created_at), nowTrading))
         : orders.filter((o) => o.order_status === activeFilter)
 
     if (activeFilter === 'completed') {
       if (completedView === 'day' && completedDay) {
-        base = base.filter((o) => isSameDay(new Date(o.created_at), completedDay))
+        base = base.filter((o) => isSameDay(tradingDate(o.created_at), completedDay))
       } else if (completedView === 'month') {
-        base = base.filter((o) => isSameMonth(new Date(o.created_at), completedMonth))
+        base = base.filter((o) => isSameMonth(tradingDate(o.created_at), completedMonth))
       }
     }
     return base
