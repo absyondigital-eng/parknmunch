@@ -1,9 +1,16 @@
 export function printReceipt(order) {
+  const tz = 'Europe/London'
+  const created = new Date(order.created_at)
+  const displayDate = created.toLocaleDateString('en-GB', { timeZone: tz })
+  const displayTime = created.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz })
+
   // If running inside the Park N Munch Android app, use the native USB print bridge
   if (window.AndroidPrint) {
     window.AndroidPrint.printReceipt(JSON.stringify({
       id:                  order.id,
       created_at:          order.created_at,
+      display_date:        displayDate,
+      display_time:        displayTime,
       customer_name:       order.customer_name,
       customer_phone:      order.customer_phone,
       car_registration:    order.car_registration,
@@ -20,10 +27,6 @@ export function printReceipt(order) {
 
   // Fallback: browser print window (used when running in a regular browser)
   const items = Array.isArray(order.order_items) ? order.order_items : []
-  const created = new Date(order.created_at)
-  const tz = 'Europe/London'
-  const dateStr = created.toLocaleDateString('en-GB', { timeZone: tz })
-  const timeStr = created.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz })
   const orderId = String(order.id).slice(-6).toUpperCase()
 
   const itemRows = items.map(item => {
@@ -76,8 +79,8 @@ export function printReceipt(order) {
   <span class="bold">#${orderId}</span>
 </div>
 <div class="row">
-  <span>${dateStr}</span>
-  <span>${timeStr}</span>
+  <span>${displayDate}</span>
+  <span>${displayTime}</span>
 </div>
 
 <div class="dashes"></div>
