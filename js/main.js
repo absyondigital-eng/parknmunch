@@ -7,7 +7,7 @@ function updateGarageBadge() {
   const badge  = document.getElementById('garageBadge');
   const status = document.getElementById('garageStatus');
   if (!badge || !status) return;
-  if (isOpen()) {
+  if (isOpen() && !window.SITE_CLOSED) {
     badge.classList.remove('closed');
     status.textContent = 'GARAGE IS OPEN';
   } else {
@@ -17,6 +17,7 @@ function updateGarageBadge() {
 }
 updateGarageBadge();
 setInterval(updateGarageBadge, 60000);
+window.onSiteStatusChange = updateGarageBadge;
 
 document.addEventListener('DOMContentLoaded', () => {
 

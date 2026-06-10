@@ -4,18 +4,32 @@
 
 /* ---- Open/closed state for the order page ---- */
 function applyClosedState() {
-  const banner = document.getElementById('closedBanner');
-  if (isOpen()) {
+  const banner      = document.getElementById('closedBanner');
+  const bannerTitle = banner && banner.querySelector('.cb-text strong');
+  const bannerSub   = banner && banner.querySelector('.cb-text span');
+  const open = isOpen() && !window.SITE_CLOSED;
+  if (open) {
     document.body.classList.remove('shop-closed');
     if (banner) banner.style.display = 'none';
   } else {
     document.body.classList.add('shop-closed');
     if (banner) banner.style.display = '';
+    if (bannerTitle && bannerSub) {
+      if (window.SITE_CLOSED) {
+        bannerTitle.textContent = 'Garage is temporarily closed';
+        bannerSub.textContent   = "We'll be back soon — please check back later.";
+      } else {
+        bannerTitle.textContent = "We're currently closed";
+        bannerSub.textContent   = 'Open Tue–Thu 4pm–1am · Sun, Fri & Sat 4pm–2am · Closed Mondays';
+      }
+    }
   }
 }
+window.onSiteStatusChange = applyClosedState;
 
 document.addEventListener('DOMContentLoaded', async () => {
 
+  if (window.siteStatusReady) await window.siteStatusReady;
   applyClosedState();
   setInterval(applyClosedState, 60000);
 

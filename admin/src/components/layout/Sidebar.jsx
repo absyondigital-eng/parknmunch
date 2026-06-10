@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { BusyMode } from '../orders/BusyMode'
+import { SiteClosed } from '../orders/SiteClosed'
 
 const NAV_LINKS = [
   {
@@ -147,8 +148,9 @@ export function Sidebar({ onClose, newOrderCount = 0 }) {
         ))}
       </nav>
 
-      {/* Busy mode */}
+      {/* Site open/closed + busy mode */}
       <div className="px-3 pb-3">
+        <SiteClosed />
         <BusyMode />
       </div>
 
