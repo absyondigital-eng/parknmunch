@@ -122,6 +122,7 @@ exports.handler = async (event) => {
   const customerPhone = metadata.phone          || '';
   const carReg        = metadata.carReg         || '';
   const customerEmail = metadata.customer_email || '';
+  const notes         = metadata.notes          || '';
   const orderRaw      = metadata.order          || '[]';
   const discountCode  = metadata.discount_code  || '';
   const discountPct   = parseInt(metadata.discount_pct || '0', 10);
@@ -179,7 +180,7 @@ exports.handler = async (event) => {
     total:               totalPounds,
     payment_status:      'paid',
     order_status:        'new',
-    notes:               null,
+    notes:               notes || null,
     discount_code:       discountCode || null,
     discount_percentage: discountPct  || null,
     discount_amount:     discountAmount || null,

@@ -93,6 +93,7 @@ exports.handler = async (event) => {
         phone:          customer.phone,
         carReg:         customer.carReg,
         customer_email: customer.email || '',
+        notes:          (customer.notes || '').slice(0, 500),
         order:          orderMeta,
         discount_code:  discount ? discount.code : '',
         discount_pct:   discount ? String(discount.percentage) : '',

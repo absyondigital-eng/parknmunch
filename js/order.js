@@ -843,6 +843,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const nameInput      = document.getElementById('custName');
   const phoneInput     = document.getElementById('custPhone');
   const emailInput     = document.getElementById('custEmail');
+  const notesInput     = document.getElementById('orderNotes');
   const regError       = document.getElementById('regError');
   const nameError      = document.getElementById('nameError');
   const phoneError     = document.getElementById('phoneError');
@@ -958,7 +959,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       if (!valid || cart.length === 0) return;
-      redirectToStripe(nameVal, phoneVal, regVal, emailVal);
+      const notesVal = notesInput ? notesInput.value.trim() : '';
+      redirectToStripe(nameVal, phoneVal, regVal, emailVal, notesVal);
     });
   }
 
@@ -1034,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  async function redirectToStripe(name, phone, reg, email) {
+  async function redirectToStripe(name, phone, reg, email, notes) {
     const submitBtn  = checkoutForm.querySelector('.form-submit');
     const stripeErr  = document.getElementById('stripeError');
     const original   = submitBtn.innerHTML;
@@ -1050,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         quantity: entry.qty,
       }));
 
-      const customer = { name, phone, carReg: reg, email };
+      const customer = { name, phone, carReg: reg, email, notes: notes || '' };
 
       const res = await fetch('/.netlify/functions/create-checkout-session', {
         method:  'POST',
