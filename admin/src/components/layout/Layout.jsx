@@ -138,12 +138,16 @@ export default function Layout({ children }) {
             </span>
           </div>
 
-          {newOrderCount > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+          {newOrderCount > 0 ? (
+            <NavLink
+              to="/orders"
+              className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse"
+            >
               {newOrderCount}
-            </span>
+            </NavLink>
+          ) : (
+            <div className="w-8" />
           )}
-          {newOrderCount === 0 && <div className="w-8" />}
         </header>
 
         {/* Page content */}
