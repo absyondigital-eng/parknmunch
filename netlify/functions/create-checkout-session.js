@@ -6,6 +6,39 @@ const supabase = createClient(
   process.env.Supabase_Service_Role_Key
 );
 
+const ORDER_META_MAX_LEN = 490;
+
+// Stripe metadata values are capped (we use 490 chars). Pack items one at a
+// time and stop BEFORE exceeding the budget, so the result is always valid
+// JSON — a naive string slice can cut mid-object and make the whole list
+// unparseable downstream (stripe-webhook.js would then store zero items).
+// Any items that don't fit are summarised in a trailing marker instead of
+// being silently lost. The marker's budget is reserved up front — packing
+// items greedily first and only then trying to append a marker leaves it
+// prone to being squeezed out entirely when the items already fill the cap.
+function packOrderMetadata(items, maxLen = ORDER_META_MAX_LEN) {
+  const mapped = items.map(({ name, quantity, price }) => ({ n: name, q: quantity, p: price }));
+
+  const full = JSON.stringify(mapped);
+  if (full.length <= maxLen) return full;
+
+  const markerFor  = (n) => ({ n: `+${n} more item${n > 1 ? 's' : ''} - see Stripe session for full order`, q: 1, p: 0 });
+  const markerRoom = JSON.stringify(markerFor(mapped.length)).length + 1; // +1 for the joining comma
+  const packBudget = maxLen - markerRoom;
+
+  let fitCount = 0;
+  for (let i = 1; i <= mapped.length; i++) {
+    if (JSON.stringify(mapped.slice(0, i)).length > packBudget) break;
+    fitCount = i;
+  }
+
+  const remaining = mapped.length - fitCount;
+  const withMarker = JSON.stringify([...mapped.slice(0, fitCount), markerFor(remaining)]);
+
+  // Safety net — should always fit given the reserved room above.
+  return withMarker.length <= maxLen ? withMarker : JSON.stringify(mapped.slice(0, fitCount));
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -63,10 +96,7 @@ exports.handler = async (event) => {
       quantity,
     }));
 
-    const orderRaw = JSON.stringify(
-      items.map(({ name, quantity, price }) => ({ n: name, q: quantity, p: price }))
-    );
-    const orderMeta = orderRaw.length > 490 ? orderRaw.slice(0, 487) + '...' : orderRaw;
+    const orderMeta = packOrderMetadata(items);
 
     const baseUrl = process.env.URL || 'http://localhost:8888';
 
