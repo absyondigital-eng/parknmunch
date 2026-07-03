@@ -12,3 +12,6 @@ admin/.env
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local dev/screenshot tooling
+temporary screenshots/

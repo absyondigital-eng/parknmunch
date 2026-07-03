@@ -597,6 +597,41 @@
 
 
   <!-- ============================================================
+       BOX BUILDER MODAL (The Dealer's Box, X5 - Munch Box for 2, etc.)
+       Pick N burgers (each with its own add-ons), optional drink choice
+       ============================================================ -->
+  <div class="garage-overlay" id="boxBuilderOverlay" role="dialog" aria-modal="true" aria-labelledby="bbTitle">
+    <div class="garage-modal">
+
+      <div class="gm-header">
+        <div class="gm-header-left">
+          <div class="gm-title" id="bbTitle">Box</div>
+          <div class="gm-sub" id="bbSub">Pick your burger</div>
+        </div>
+        <div class="gm-header-right">
+          <div class="gm-counter"><span id="bbCount">0</span><span class="gm-total" id="bbTotalTag">/1</span></div>
+          <button class="gm-close" id="bbClose" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <div class="gm-body" id="bbBody"></div>
+
+      <div class="bm-drinks-wrap" id="bbDrinksWrap" style="margin:0 14px 12px;">
+        <div class="bm-drinks-heading">Choose your drink:</div>
+        <div id="bbDrinksList"></div>
+        <div class="bm-drink-error" id="bbDrinkError">⚠ Please select a drink</div>
+      </div>
+
+      <div class="gm-footer">
+        <p class="gm-error" id="bbError">Select your burger(s) to continue</p>
+        <button class="gm-submit" id="bbSubmit" disabled>Add to Cart &rarr;</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================
        UPSELL MODAL (shown before checkout)
        ============================================================ -->
   <div class="upsell-overlay" id="upsellOverlay" role="dialog" aria-modal="true" aria-labelledby="upsellTitle">

@@ -108,8 +108,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ---- HELPERS ---- */
   function filterItems(category) {
-    if (category === 'all')     return MENU;
-    if (category === 'popular') return POPULAR_IDS.map(id => MENU.find(m => m.id === id)).filter(Boolean);
+    if (category === 'all')       return MENU;
+    if (category === 'popular')   return POPULAR_IDS.map(id => MENU.find(m => m.id === id)).filter(Boolean);
+    if (category === 'new-items') return NEW_ITEM_IDS.map(id => MENU.find(m => m.id === id)).filter(Boolean);
     const mapped = VIRTUAL_CATS[category];
     if (mapped) return MENU.filter(i => mapped.includes(i.category));
     return MENU.filter(i => i.category === category);
@@ -117,6 +118,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function makeCartKey(item, customisation) {
     if (!customisation) return `${item.id}_plain`;
+    if (customisation.boxBuilder) {
+      const selStr = customisation.selections
+        .map(s => `${s.item.id}:${s.qty}:${s.style || ''}:${(s.addons || []).map(a => a.id).sort().join(',')}`)
+        .sort()
+        .join('|');
+      return `${item.id}_box_${selStr}_${customisation.drink || ''}`;
+    }
     if (customisation.drink) return `${item.id}_${customisation.drink}`;
     const addonStr = (customisation.addons || []).map(a => a.id).sort().join(',');
     const styleStr = customisation.style || 'plain';
@@ -125,20 +133,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function entryPrice(entry) {
     const base = entry.item.price;
-    if (!entry.customisation) return base;
-    const addons = (entry.customisation.addons || []).reduce((s, a) => s + a.price, 0);
-    const meal   = entry.customisation.meal ? MEAL_UPGRADE_PRICE : 0;
+    const c    = entry.customisation;
+    if (!c) return base;
+    if (c.boxBuilder) {
+      const addonsTotal = (c.selections || []).reduce((s, sel) =>
+        s + (sel.addons || []).reduce((s2, a) => s2 + a.price, 0) * (sel.qty || 1), 0);
+      return base + addonsTotal;
+    }
+    const addons = (c.addons || []).reduce((s, a) => s + a.price, 0);
+    const meal   = c.meal ? MEAL_UPGRADE_PRICE : 0;
     return base + addons + meal;
   }
 
   function buildCustomLines(customisation) {
     if (!customisation) return '';
-    if (customisation.drink) return '';
     if (customisation.garage) {
       return customisation.garage.map(sel =>
         `<div class="ci-custom-line">${sel.qty > 1 ? sel.qty + '× ' : ''}${sel.item.name}${sel.style ? ` <span class="cc-tag">${sel.style}</span>` : ''}</div>`
       ).join('');
     }
+    if (customisation.boxBuilder) {
+      const lines = customisation.selections.map(sel => {
+        const bits = [];
+        if (sel.style) bits.push(sel.style);
+        if (sel.addons && sel.addons.length) bits.push(sel.addons.map(a => a.name).join(', '));
+        const tag = bits.length ? ` <span class="cc-tag">${bits.join(' · ')}</span>` : '';
+        return `<div class="ci-custom-line">${sel.qty > 1 ? sel.qty + '× ' : ''}${sel.item.name}${tag}</div>`;
+      });
+      if (customisation.drink) lines.push(`<div class="ci-custom-line">Drink <span class="cc-tag">${customisation.drink}</span></div>`);
+      return lines.join('');
+    }
+    if (customisation.drink) return '';
     const lines = [];
     if (customisation.style) {
       lines.push(`<div class="ci-custom-line"><span class="cc-tag">${customisation.style}</span></div>`);
@@ -155,13 +180,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   function buildItemName(entry) {
     const { item, customisation } = entry;
     if (!customisation) return item.name;
-    if (customisation.drink)  return `${item.name} - ${customisation.drink}`;
     if (customisation.garage) {
       const parts = customisation.garage.map(s =>
         `${s.qty > 1 ? s.qty + '× ' : ''}${s.item.name}${s.style ? ` (${s.style})` : ''}`
       );
       return `${item.name}: ${parts.join(', ')}`;
     }
+    if (customisation.boxBuilder) {
+      // Kept free of nested parentheses/commas so the Android receipt printer's
+      // "(...)" customisation parser (EscPosReceiptPrinter.kt) never mis-splits it.
+      const parts = customisation.selections.map(sel => {
+        const bits = [];
+        if (sel.style)                    bits.push(sel.style);
+        if (sel.addons && sel.addons.length) bits.push(...sel.addons.map(a => a.name));
+        const qtyPrefix = sel.qty > 1 ? `${sel.qty}x ` : '';
+        return bits.length ? `${qtyPrefix}${sel.item.name} + ${bits.join(' + ')}` : `${qtyPrefix}${sel.item.name}`;
+      });
+      if (customisation.drink) parts.push(`Drink: ${customisation.drink}`);
+      return `${item.name} (${parts.join(' · ')})`;
+    }
+    if (customisation.drink)  return `${item.name} - ${customisation.drink}`;
     const parts = [];
     if (customisation.style)          parts.push(customisation.style);
     if (customisation.addons?.length) parts.push(customisation.addons.map(a => a.name).join(', '));
@@ -219,6 +257,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           openBurgerModal(item);
         } else if (item.isGarage) {
           openGarageModal();
+        } else if (item.isBoxBuilder) {
+          openBoxBuilderModal(item);
         } else if (item.hasDrinkChoice) {
           openCansModal(item);
         } else if (item.category === 'box-deals') {
@@ -283,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateAddButtons();
       }, 1100);
     }
-    const toastLabel = (customisation && customisation.drink)
+    const toastLabel = (customisation && customisation.drink && !customisation.boxBuilder)
       ? `${item.name} - ${customisation.drink}`
       : item.name;
     showToast(toastLabel);
@@ -354,7 +394,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { item, qty, cartKey, customisation } = entry;
       const lineTotal    = entryPrice(entry) * qty;
       const customLines  = buildCustomLines(customisation);
-      const displayName  = (customisation && customisation.drink)
+      const displayName  = (customisation && customisation.drink && !customisation.boxBuilder)
         ? `${item.name} - ${customisation.drink}`
         : item.name;
       return `
@@ -403,7 +443,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.add-btn').forEach(btn => {
       const id   = btn.dataset.id;
       const item = MENU.find(m => m.id === id);
-      if (!item || item.category === 'burgers' || item.isGarage || item.hasDrinkChoice) {
+      if (!item || item.category === 'burgers' || item.isGarage || item.isBoxBuilder || item.hasDrinkChoice) {
         btn.innerHTML = '<span>+</span> Add to Cart';
         btn.classList.remove('added');
         return;
@@ -722,6 +762,186 @@ document.addEventListener('DOMContentLoaded', async () => {
       const customisation = { garage: garageSelection.map(s => ({ item: s.item, qty: s.qty, style: s.style })) };
       addToCart(garageItem, customisation, null);
       closeGarageModal();
+    });
+  }
+
+  /* ---- BOX BUILDER MODAL (The Dealer's Box, X5 - Munch Box for 2, etc.) ---- */
+  const boxBuilderOverlay = document.getElementById('boxBuilderOverlay');
+  let bbItem       = null; // the box product being configured
+  let bbSelections = [];   // [{ item, qty, style, addons }]
+
+  function bbTotal() {
+    return bbSelections.reduce((s, e) => s + e.qty, 0);
+  }
+
+  function openBoxBuilderModal(item) {
+    bbItem       = item;
+    bbSelections = [];
+
+    const count = item.boxBuilderCount || 1;
+    document.getElementById('bbTitle').textContent    = item.name;
+    document.getElementById('bbSub').textContent      = `Pick any ${count} burger${count > 1 ? 's' : ''}`;
+    document.getElementById('bbTotalTag').textContent = '/' + count;
+
+    const drinksWrap = document.getElementById('bbDrinksWrap');
+    if (item.boxBuilderDrink) {
+      const drinksList = document.getElementById('bbDrinksList');
+      drinksList.innerHTML = MEAL_DRINKS.map((d, i) => `
+        <label class="bm-drink-row">
+          <input type="radio" name="bbDrink" value="${d}" ${i === 0 ? 'checked' : ''}>
+          ${d}
+        </label>`).join('');
+      drinksWrap.classList.add('visible');
+    } else {
+      drinksWrap.classList.remove('visible');
+    }
+    document.getElementById('bbDrinkError').classList.remove('show');
+
+    renderBoxBuilderBody();
+    boxBuilderOverlay.classList.add('open');
+    document.body.classList.add('modal-active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeBoxBuilderModal() {
+    boxBuilderOverlay.classList.remove('open');
+    document.body.classList.remove('modal-active');
+    document.body.style.overflow = '';
+    bbItem = null;
+  }
+
+  function renderBoxBuilderBody() {
+    if (!bbItem) return;
+    const count    = bbItem.boxBuilderCount || 1;
+    const burgers  = MENU.filter(m => m.category === 'burgers');
+    const total    = bbTotal();
+    const bbCountEl = document.getElementById('bbCount');
+    const bbSubmit  = document.getElementById('bbSubmit');
+    const bbError   = document.getElementById('bbError');
+
+    if (bbCountEl) bbCountEl.textContent = total;
+    if (bbSubmit)  bbSubmit.disabled     = total !== count;
+    if (bbError)   bbError.style.visibility = total === count ? 'hidden' : 'visible';
+
+    const bbBody = document.getElementById('bbBody');
+    if (!bbBody) return;
+
+    bbBody.innerHTML = burgers.map(burger => {
+      const sel    = bbSelections.find(s => s.item.id === burger.id);
+      const qty    = sel ? sel.qty : 0;
+      const style  = sel ? sel.style : null;
+      const addons = sel ? sel.addons : [];
+
+      const addonsHtml = qty > 0 ? `
+        <div class="gm-card-addons">
+          ${BURGER_ADDONS.map(a => `
+            <label class="bm-addon-row">
+              <input type="checkbox" class="bb-addon-cb" data-id="${burger.id}" data-addon-id="${a.id}" ${addons.some(x => x.id === a.id) ? 'checked' : ''}>
+              <span class="bm-addon-name">${a.name}</span>
+              <span class="bm-addon-price">+£${a.price.toFixed(2)}</span>
+            </label>`).join('')}
+        </div>` : '';
+
+      return `
+        <div class="gm-card${qty > 0 ? ' selected' : ''}" data-id="${burger.id}">
+          <div class="gm-card-img">
+            <img src="${burger.image}" alt="${burger.name}" loading="lazy"
+                 onerror="this.classList.add('hidden')">
+          </div>
+          <div class="gm-card-info">
+            <div class="gm-card-name">${burger.name}</div>
+            <div class="gm-card-price">£${burger.price.toFixed(2)}</div>
+            ${burger.hasStyle && qty > 0 ? `
+              <div class="gm-style-row">
+                <label class="gm-style-opt">
+                  <input type="radio" name="bb-style-${burger.id}" value="Normal" ${style !== 'Spicy' ? 'checked' : ''}>
+                  Normal
+                </label>
+                <label class="gm-style-opt">
+                  <input type="radio" name="bb-style-${burger.id}" value="Spicy" ${style === 'Spicy' ? 'checked' : ''}>
+                  Spicy
+                </label>
+              </div>` : ''}
+            ${addonsHtml}
+          </div>
+          <div class="gm-card-controls">
+            <button class="gm-qty-btn bb-dec" data-id="${burger.id}"${qty === 0 ? ' disabled' : ''}>−</button>
+            <span class="gm-qty-val">${qty}</span>
+            <button class="gm-qty-btn bb-inc" data-id="${burger.id}"${total >= count && qty === 0 ? ' disabled' : ''}>+</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    bbBody.querySelectorAll('.bb-inc').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (bbTotal() >= count) return;
+        const id   = btn.dataset.id;
+        const item = MENU.find(m => m.id === id);
+        const sel  = bbSelections.find(s => s.item.id === id);
+        if (sel) { sel.qty++; } else { bbSelections.push({ item, qty: 1, style: item.hasStyle ? 'Normal' : null, addons: [] }); }
+        renderBoxBuilderBody();
+      });
+    });
+
+    bbBody.querySelectorAll('.bb-dec').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id  = btn.dataset.id;
+        const sel = bbSelections.find(s => s.item.id === id);
+        if (!sel) return;
+        sel.qty--;
+        if (sel.qty <= 0) bbSelections = bbSelections.filter(s => s.item.id !== id);
+        renderBoxBuilderBody();
+      });
+    });
+
+    bbBody.querySelectorAll('input[type="radio"][name^="bb-style-"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const id  = radio.name.replace('bb-style-', '');
+        const sel = bbSelections.find(s => s.item.id === id);
+        if (sel) sel.style = radio.value;
+      });
+    });
+
+    bbBody.querySelectorAll('.bb-addon-cb').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const id  = cb.dataset.id;
+        const sel = bbSelections.find(s => s.item.id === id);
+        if (!sel) return;
+        const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
+        if (!addon) return;
+        if (cb.checked) {
+          if (!sel.addons.some(a => a.id === addon.id)) sel.addons.push(addon);
+        } else {
+          sel.addons = sel.addons.filter(a => a.id !== addon.id);
+        }
+      });
+    });
+  }
+
+  if (boxBuilderOverlay) {
+    boxBuilderOverlay.addEventListener('click', e => { if (e.target === boxBuilderOverlay) closeBoxBuilderModal(); });
+    document.getElementById('bbClose').addEventListener('click', closeBoxBuilderModal);
+    document.getElementById('bbSubmit').addEventListener('click', () => {
+      const count = bbItem.boxBuilderCount || 1;
+      if (bbTotal() !== count) return;
+
+      let drinkVal = null;
+      if (bbItem.boxBuilderDrink) {
+        const drinkInput = boxBuilderOverlay.querySelector('input[name="bbDrink"]:checked');
+        if (!drinkInput) {
+          document.getElementById('bbDrinkError').classList.add('show');
+          return;
+        }
+        drinkVal = drinkInput.value;
+      }
+
+      const customisation = {
+        boxBuilder: true,
+        selections: bbSelections.map(s => ({ item: s.item, qty: s.qty, style: s.style, addons: s.addons })),
+        drink: drinkVal,
+      };
+      addToCart(bbItem, customisation, null);
+      closeBoxBuilderModal();
     });
   }
 

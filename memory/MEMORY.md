@@ -1,3 +1,3 @@
 # Memory Index
 
-- [Park N Munch Website Build](project_parknmunch.md) — Two-page frontend site in ParkNMunch/ folder; images go in images/ directory
+- [Park N Munch Website Build](project_parknmunch.md) — LIVE prod stack: Supabase-driven menu, Stripe checkout, admin panel, Android USB printer app

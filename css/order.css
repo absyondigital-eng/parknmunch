@@ -1763,6 +1763,17 @@ body.modal-active #stickyCartBar { display: none !important; }
 }
 .gm-style-opt input { display: none; }
 
+/* Add-on checkboxes nested inside a gm-card (Box Builder modal) */
+.gm-card-addons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+.gm-card-addons .bm-addon-row { padding: 7px 10px; }
+.gm-card-addons .bm-addon-name { font-size: 0.78rem; }
+.gm-card-addons .bm-addon-price { font-size: 0.74rem; }
+
 .gm-card-controls { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
 .gm-qty-btn {
   width: 28px; height: 28px;

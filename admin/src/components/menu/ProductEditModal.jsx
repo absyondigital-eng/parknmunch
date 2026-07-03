@@ -48,6 +48,7 @@ export function ProductEditModal({ product, onClose, onSave }) {
     description: product?.description || '',
     active:      product?.active  !== undefined ? product.active  : true,
     popular:     product?.popular !== undefined ? product.popular : false,
+    newItem:     product?.new_item !== undefined ? product.new_item : false,
     hasStyle:    Boolean(mods.hasStyle),
   })
   const [saving, setSaving] = useState(false)
@@ -80,6 +81,7 @@ export function ProductEditModal({ product, onClose, onSave }) {
       description: form.description.trim(),
       active:      form.active,
       popular:     form.popular,
+      new_item:    form.newItem,
       modifiers: {
         ...(product?.modifiers || {}),
         hasStyle: form.hasStyle,
@@ -193,6 +195,12 @@ export function ProductEditModal({ product, onClose, onSave }) {
             onChange={(v) => set('popular', v)}
             label="🔥 Popular"
             sub="Shows in the Popular tab on the customer website"
+          />
+          <Toggle
+            checked={form.newItem}
+            onChange={(v) => set('newItem', v)}
+            label="✨ New Item"
+            sub="Shows in the New Items tab on the customer website"
           />
         </div>
 

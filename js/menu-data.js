@@ -7,6 +7,7 @@
 const CATEGORIES = [
   { id: 'all',          label: 'All',           emoji: '⚡' },
   { id: 'popular',      label: 'Popular',        emoji: '🔥' },
+  { id: 'new-items',    label: 'New Items',      emoji: '✨' },
   { id: 'burgers',      label: 'Burgers',        emoji: '🍔' },
   { id: 'munchboxes',   label: 'Munchboxes',     emoji: '📦' },
   { id: 'loaded-fries', label: 'Loaded Fries',   emoji: '🍟' },
@@ -50,5 +51,6 @@ const CANS_DRINKS = [
 const MEAL_UPGRADE_PRICE = 1.50;
 
 /* ---- Populated at runtime by supabase-menu.js ---- */
-let MENU        = [];
-let POPULAR_IDS = [];
+let MENU         = [];
+let POPULAR_IDS  = [];
+let NEW_ITEM_IDS = [];

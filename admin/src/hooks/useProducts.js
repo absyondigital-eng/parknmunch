@@ -122,6 +122,26 @@ export function useProducts() {
     }
   }, [])
 
+  const toggleNewItem = useCallback(async (productId, currentNewItem) => {
+    const newValue = !currentNewItem
+    setProducts((prev) =>
+      prev.map((p) => (p.id === productId ? { ...p, new_item: newValue } : p))
+    )
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ new_item: newValue })
+        .eq('id', productId)
+      if (error) throw error
+      return { success: true }
+    } catch (err) {
+      setProducts((prev) =>
+        prev.map((p) => (p.id === productId ? { ...p, new_item: currentNewItem } : p))
+      )
+      return { success: false, error: err.message }
+    }
+  }, [])
+
   const toggleFeatured = useCallback(async (productId, currentFeatured) => {
     const newFeatured = !currentFeatured
     setProducts((prev) =>
@@ -193,6 +213,7 @@ export function useProducts() {
     error,
     toggleActive,
     togglePopular,
+    toggleNewItem,
     toggleFeatured,
     updateProduct,
     createProduct,

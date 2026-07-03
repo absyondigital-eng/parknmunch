@@ -31,8 +31,12 @@
       emoji:          p.emoji || '🍔',
       hasStyle:       Boolean(mods.hasStyle),
       isGarage:       Boolean(mods.isGarage),
+      isBoxBuilder:   Boolean(mods.isBoxBuilder),
+      boxBuilderCount: Number(mods.boxBuilderCount) || 1,
+      boxBuilderDrink: Boolean(mods.boxBuilderDrink),
       hasDrinkChoice: Boolean(mods.hasDrinkChoice),
       popular:        Boolean(p.popular),
+      newItem:        Boolean(p.new_item),
       sort_order:     p.sort_order || 0,
     };
   }
@@ -54,6 +58,12 @@
       .filter(p => p.popular)
       .sort((a, b) => (a.popular_order || 999) - (b.popular_order || 999))
       .forEach(p => POPULAR_IDS.push(p.id));
+
+    NEW_ITEM_IDS.length = 0;
+    rows
+      .filter(p => p.new_item)
+      .sort((a, b) => (a.new_item_order || 999) - (b.new_item_order || 999))
+      .forEach(p => NEW_ITEM_IDS.push(p.id));
   }
 
   /* ── Fetch active products ──────────────────────────────── */

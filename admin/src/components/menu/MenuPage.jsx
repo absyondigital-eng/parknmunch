@@ -22,9 +22,10 @@ function getCatEmoji(cat) {
   return (CATEGORY_CONFIG[(cat || '').toLowerCase()] || {}).emoji || '🍽️'
 }
 
-function ProductCard({ product, onEdit, onToggleActive, onTogglePopular }) {
+function ProductCard({ product, onEdit, onToggleActive, onTogglePopular, onToggleNewItem }) {
   const isActive  = product.active
   const isPopular = product.popular
+  const isNewItem = product.new_item
 
   return (
     <div
@@ -56,6 +57,11 @@ function ProductCard({ product, onEdit, onToggleActive, onTogglePopular }) {
           {isPopular && (
             <span className="text-[10px] font-bold bg-[#9333ea]/80 text-white px-2 py-0.5 rounded-full">
               🔥 Popular
+            </span>
+          )}
+          {isNewItem && (
+            <span className="text-[10px] font-bold bg-fuchsia-600/80 text-white px-2 py-0.5 rounded-full">
+              ✨ New
             </span>
           )}
         </div>
@@ -107,6 +113,19 @@ function ProductCard({ product, onEdit, onToggleActive, onTogglePopular }) {
           >
             🔥
           </button>
+
+          {/* New Item toggle */}
+          <button
+            onClick={() => onToggleNewItem(product.id, product.new_item)}
+            title={isNewItem ? 'Remove from New Items' : 'Add to New Items'}
+            className={`text-xs px-2 py-0.5 rounded-full border transition-all ${
+              isNewItem
+                ? 'bg-fuchsia-600/20 text-fuchsia-400 border-fuchsia-600/40'
+                : 'bg-transparent text-[#555] border-[#333] hover:border-fuchsia-600/30 hover:text-fuchsia-400'
+            }`}
+          >
+            ✨
+          </button>
         </div>
 
         {/* Edit button */}
@@ -122,7 +141,7 @@ function ProductCard({ product, onEdit, onToggleActive, onTogglePopular }) {
 }
 
 export default function MenuPage() {
-  const { products, loading, error, toggleActive, togglePopular, refetch } = useProducts()
+  const { products, loading, error, toggleActive, togglePopular, toggleNewItem, refetch } = useProducts()
   const { toast } = useToast()
 
   const [search, setSearch] = useState('')
@@ -153,6 +172,7 @@ export default function MenuPage() {
 
   const activeCount   = products.filter(p => p.active).length
   const popularCount  = products.filter(p => p.popular).length
+  const newItemCount  = products.filter(p => p.new_item).length
 
   async function handleToggleActive(productId, current) {
     const result = await toggleActive(productId, current)
@@ -172,6 +192,15 @@ export default function MenuPage() {
     }
   }
 
+  async function handleToggleNewItem(productId, current) {
+    const result = await toggleNewItem(productId, current)
+    if (result.success) {
+      toast.success(current ? 'Removed from New Items' : 'Added to New Items ✨')
+    } else {
+      toast.error('Failed to update new item status')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
@@ -181,7 +210,7 @@ export default function MenuPage() {
             <div>
               <h1 className="text-xl font-bold text-[#f0f0f0]">Menu</h1>
               <p className="text-[#a0a0a0] text-sm mt-0.5">
-                {loading ? 'Loading…' : `${activeCount} active · ${popularCount} popular`}
+                {loading ? 'Loading…' : `${activeCount} active · ${popularCount} popular · ${newItemCount} new`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -316,6 +345,7 @@ export default function MenuPage() {
                 onEdit={setEditProduct}
                 onToggleActive={handleToggleActive}
                 onTogglePopular={handleTogglePopular}
+                onToggleNewItem={handleToggleNewItem}
               />
             ))}
           </div>
