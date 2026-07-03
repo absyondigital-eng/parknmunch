@@ -22,6 +22,21 @@ function getStripeSignature(headers) {
   );
 }
 
+// create-checkout-session.js splits the order JSON across order_0, order_1,
+// ... metadata keys (see buildOrderMetadataChunks) instead of one value, since
+// a single Stripe metadata value is capped at 500 chars. Reassemble by
+// concatenation in order. Falls back to the older single "order" field for
+// any checkout session created before this chunking was deployed.
+function reassembleOrderRaw(metadata) {
+  const orderCount = parseInt(metadata.order_count || '0', 10);
+  if (orderCount > 0) {
+    let raw = '';
+    for (let i = 0; i < orderCount; i++) raw += metadata[`order_${i}`] || '';
+    return raw;
+  }
+  return metadata.order || '[]';
+}
+
 function safeParseOrderItems(raw) {
   if (!raw) return [];
   try {
@@ -123,7 +138,7 @@ exports.handler = async (event) => {
   const carReg        = metadata.carReg         || '';
   const customerEmail = metadata.customer_email || '';
   const notes         = metadata.notes          || '';
-  const orderRaw      = metadata.order          || '[]';
+  const orderRaw      = reassembleOrderRaw(metadata);
   const discountCode  = metadata.discount_code  || '';
   const discountPct   = parseInt(metadata.discount_pct || '0', 10);
 

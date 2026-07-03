@@ -6,17 +6,18 @@ const supabase = createClient(
   process.env.Supabase_Service_Role_Key
 );
 
-const ORDER_META_MAX_LEN = 490;
+const ORDER_CHUNK_LEN  = 490; // per-key budget, under Stripe's 500-char-per-value limit
+const ORDER_MAX_CHUNKS = 20;  // ~9.8k chars of headroom across order_0..order_19 — hundreds of items
 
-// Stripe metadata values are capped (we use 490 chars). Pack items one at a
-// time and stop BEFORE exceeding the budget, so the result is always valid
-// JSON — a naive string slice can cut mid-object and make the whole list
-// unparseable downstream (stripe-webhook.js would then store zero items).
-// Any items that don't fit are summarised in a trailing marker instead of
-// being silently lost. The marker's budget is reserved up front — packing
-// items greedily first and only then trying to append a marker leaves it
-// prone to being squeezed out entirely when the items already fill the cap.
-function packOrderMetadata(items, maxLen = ORDER_META_MAX_LEN) {
+// Stripe metadata values are capped at 500 chars EACH, but a checkout session
+// can hold many metadata keys. Rather than squeezing the whole order into one
+// value (which silently loses items once it overflows a single field), the
+// order JSON is split across order_0, order_1, ... (see buildOrderMetadata)
+// and stripe-webhook.js reassembles them by concatenation before parsing.
+// packOrderMetadata still guards the truly pathological case — an order so
+// large it exceeds even ORDER_MAX_CHUNKS worth of space — by dropping the
+// excess with a visible "+N more" marker instead of ever losing everything.
+function packOrderMetadata(items, maxLen) {
   const mapped = items.map(({ name, quantity, price }) => ({ n: name, q: quantity, p: price }));
 
   const full = JSON.stringify(mapped);
@@ -37,6 +38,21 @@ function packOrderMetadata(items, maxLen = ORDER_META_MAX_LEN) {
 
   // Safety net — should always fit given the reserved room above.
   return withMarker.length <= maxLen ? withMarker : JSON.stringify(mapped.slice(0, fitCount));
+}
+
+// Splits the (already length-guarded) order JSON string across order_0,
+// order_1, ... metadata keys, plus order_count so the webhook knows how many
+// to reassemble.
+function buildOrderMetadataChunks(items) {
+  const raw = packOrderMetadata(items, ORDER_CHUNK_LEN * ORDER_MAX_CHUNKS);
+  const chunks = {};
+  let count = 0;
+  for (let i = 0; i < raw.length; i += ORDER_CHUNK_LEN) {
+    chunks[`order_${count}`] = raw.slice(i, i + ORDER_CHUNK_LEN);
+    count++;
+  }
+  chunks.order_count = String(count);
+  return chunks;
 }
 
 exports.handler = async (event) => {
@@ -96,8 +112,6 @@ exports.handler = async (event) => {
       quantity,
     }));
 
-    const orderMeta = packOrderMetadata(items);
-
     const baseUrl = process.env.URL || 'http://localhost:8888';
 
     // Create Stripe coupon for validated discount
@@ -124,7 +138,7 @@ exports.handler = async (event) => {
         carReg:         customer.carReg,
         customer_email: customer.email || '',
         notes:          (customer.notes || '').slice(0, 500),
-        order:          orderMeta,
+        ...buildOrderMetadataChunks(items),
         discount_code:  discount ? discount.code : '',
         discount_pct:   discount ? String(discount.percentage) : '',
       },
