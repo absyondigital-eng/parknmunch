@@ -177,12 +177,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     return lines.join('');
   }
 
+  // The Android receipt printer (EscPosReceiptPrinter.kt) finds the trailing
+  // "(...)" customisation block with a regex that can't handle a SECOND pair
+  // of parens nested inside it (e.g. the burger modal's "Dipped (Spicy)"
+  // style value) — when that happens the regex fails to match at all, and
+  // the entire customisation detail (style/add-ons/meal) silently collapses
+  // into the item's main line, which then gets hard-truncated. Stripping any
+  // stray parens out of each individual piece before it's wrapped in the
+  // *single* outer pair keeps that outer pair the only one in the string.
+  function stripParens(s) {
+    return String(s).replace(/[()]/g, '');
+  }
+
   function buildItemName(entry) {
     const { item, customisation } = entry;
     if (!customisation) return item.name;
     if (customisation.garage) {
       const parts = customisation.garage.map(s =>
-        `${s.qty > 1 ? s.qty + '× ' : ''}${s.item.name}${s.style ? ` (${s.style})` : ''}`
+        `${s.qty > 1 ? s.qty + '× ' : ''}${s.item.name}${s.style ? ` (${stripParens(s.style)})` : ''}`
       );
       return `${item.name}: ${parts.join(', ')}`;
     }
@@ -191,19 +203,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       // "(...)" customisation parser (EscPosReceiptPrinter.kt) never mis-splits it.
       const parts = customisation.selections.map(sel => {
         const bits = [];
-        if (sel.style)                    bits.push(sel.style);
-        if (sel.addons && sel.addons.length) bits.push(...sel.addons.map(a => a.name));
+        if (sel.style)                    bits.push(stripParens(sel.style));
+        if (sel.addons && sel.addons.length) bits.push(...sel.addons.map(a => stripParens(a.name)));
         const qtyPrefix = sel.qty > 1 ? `${sel.qty}x ` : '';
         return bits.length ? `${qtyPrefix}${sel.item.name} + ${bits.join(' + ')}` : `${qtyPrefix}${sel.item.name}`;
       });
-      if (customisation.drink) parts.push(`Drink: ${customisation.drink}`);
+      if (customisation.drink) parts.push(`Drink: ${stripParens(customisation.drink)}`);
       return `${item.name} (${parts.join(' · ')})`;
     }
     if (customisation.drink)  return `${item.name} - ${customisation.drink}`;
     const parts = [];
-    if (customisation.style)          parts.push(customisation.style);
-    if (customisation.addons?.length) parts.push(customisation.addons.map(a => a.name).join(', '));
-    if (customisation.meal)           parts.push(`Meal: ${customisation.meal}`);
+    if (customisation.style)          parts.push(stripParens(customisation.style));
+    if (customisation.addons?.length) parts.push(customisation.addons.map(a => stripParens(a.name)).join(', '));
+    if (customisation.meal)           parts.push(`Meal: ${stripParens(customisation.meal)}`);
     return parts.length ? `${item.name} (${parts.join(' · ')})` : item.name;
   }
 
@@ -416,7 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <button class="ci-remove" data-key="${cartKey}" title="Remove">✕</button>
             </div>
             <div class="ci-note-wrap">
-              <textarea class="ci-note-input" data-key="${cartKey}"
+              <textarea class="ci-note-input" data-key="${cartKey}" maxlength="300"
                 placeholder="Add a note (e.g. no onions, extra sauce)" rows="1">${entry.note || ''}</textarea>
             </div>
           </div>
@@ -1267,7 +1279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const items = cart.map(entry => ({
-        name:     buildItemName(entry) + (entry.note ? ` [Note: ${sanitiseText(entry.note).slice(0, 100)}]` : ''),
+        name:     buildItemName(entry) + (entry.note ? ` [Note: ${sanitiseText(entry.note).slice(0, 300)}]` : ''),
         price:    entryPrice(entry),
         quantity: entry.qty,
       }));

@@ -1,3 +1,5 @@
+import { parseItemNote } from './parseItemNote'
+
 export function printReceipt(order) {
   const tz = 'Europe/London'
   const created = new Date(order.created_at)
@@ -33,8 +35,10 @@ export function printReceipt(order) {
 
   const itemRows = items.map(item => {
     const lineTotal = (Number(item.price) * Number(item.quantity)).toFixed(2)
-    const label = `${item.quantity}x ${item.name}`
-    return `<div class="row"><span class="item-name">${label}</span><span>£${lineTotal}</span></div>`
+    const { name: displayName, note } = parseItemNote(item.name)
+    const label = `${item.quantity}x ${displayName}`
+    const noteRow = note ? `<div class="item-note">* ${note}</div>` : ''
+    return `<div class="row"><span class="item-name">${label}</span><span>£${lineTotal}</span></div>${noteRow}`
   }).join('')
 
   const html = `<!DOCTYPE html>
@@ -59,6 +63,7 @@ export function printReceipt(order) {
   .dashes { border-top: 1px dashed #000; margin: 5px 0; }
   .row { display: flex; justify-content: space-between; align-items: baseline; margin: 1px 0; }
   .item-name { flex: 1; padding-right: 6px; }
+  .item-note { font-size: 8pt; padding-left: 10px; margin-bottom: 3px; }
   .total-row { font-weight: bold; font-size: 12pt; margin-top: 3px; }
   .section { margin: 4px 0; }
   .mono-box {

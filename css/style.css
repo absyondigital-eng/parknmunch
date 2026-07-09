@@ -371,24 +371,6 @@ button { font-family: var(--font); }
 
 .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
-.hero-stats {
-  display: flex;
-  justify-content: center;
-  gap: 36px;
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px solid var(--border);
-}
-
-.stat-num {
-  font-size: 1.7rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--text);
-}
-.stat-num em { font-style: normal; color: var(--purple-light); }
-.stat-label { font-size: 0.78rem; color: var(--text-3); margin-top: 4px; font-weight: 500; }
-
 /* Hero visual */
 .hero-visual {
   display: flex;
@@ -1042,7 +1024,6 @@ footer {
   .footer-top { grid-template-columns: 1fr; gap: 28px; }
   .mob-cta    { display: block; }
   body        { padding-bottom: 72px; }
-  .hero-stats { gap: 24px; }
 
 }
 
@@ -1051,7 +1032,6 @@ footer {
   .menu-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .card-img  { height: 130px; }
   .card-body { padding: 12px 14px 14px; }
-  .hero-stats { flex-wrap: wrap; gap: 16px; }
 }
 
 
@@ -1539,9 +1519,6 @@ footer {
   50%       { opacity: 1; }
 }
 .hero-bg { animation: heroBreathe 9s ease-in-out infinite; }
-
-/* Hero stats richer numbers */
-.stat-num { font-size: 1.85rem; }
 
 /* Menu card deeper hover */
 .menu-card:hover {

@@ -5,6 +5,7 @@ import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
 import { printReceipt } from '../../lib/printReceipt'
+import { parseItemNote } from '../../lib/parseItemNote'
 
 const STATUS_TRANSITIONS = {
   new: ['completed'],
@@ -195,18 +196,24 @@ export function OrderDetailModal({ order, onClose, onStatusChange, onRefund }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item, i) => (
-                    <tr key={i} className="border-b border-white/[0.04] last:border-0">
-                      <td className="text-[#f0f0f0] px-4 py-2.5">{item.name}</td>
-                      <td className="text-[#a0a0a0] text-center px-2 py-2.5">{item.quantity}</td>
-                      <td className="text-[#a0a0a0] text-right px-4 py-2.5">
-                        £{Number(item.price).toFixed(2)}
-                      </td>
-                      <td className="text-[#f0f0f0] font-medium text-right px-4 py-2.5">
-                        £{(Number(item.price) * Number(item.quantity)).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((item, i) => {
+                    const { name, note } = parseItemNote(item.name)
+                    return (
+                      <tr key={i} className="border-b border-white/[0.04] last:border-0">
+                        <td className="text-[#f0f0f0] px-4 py-2.5">
+                          {name}
+                          {note && <div className="text-[11px] text-amber-400/90 mt-0.5">* {note}</div>}
+                        </td>
+                        <td className="text-[#a0a0a0] text-center px-2 py-2.5">{item.quantity}</td>
+                        <td className="text-[#a0a0a0] text-right px-4 py-2.5">
+                          £{Number(item.price).toFixed(2)}
+                        </td>
+                        <td className="text-[#f0f0f0] font-medium text-right px-4 py-2.5">
+                          £{(Number(item.price) * Number(item.quantity)).toFixed(2)}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
 

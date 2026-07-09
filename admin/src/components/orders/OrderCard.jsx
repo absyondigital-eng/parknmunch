@@ -4,6 +4,7 @@ import { StatusBadge } from '../ui/Badge'
 import { useToast } from '../../context/ToastContext'
 import { printReceipt } from '../../lib/printReceipt'
 import { stopOrderAlert } from '../../hooks/useNewOrderAlert'
+import { parseItemNote } from '../../lib/parseItemNote'
 
 const STATUS_TRANSITIONS = {
   new: ['completed'],
@@ -160,14 +161,20 @@ export function OrderCard({ order, onViewDetails, onStatusChange, onRefund }) {
         {/* Order items */}
         <div className="mb-3">
           <div className="space-y-0.5">
-            {displayItems.map((item, i) => (
-              <div key={i} className="flex justify-between text-xs">
-                <span className="text-[#a0a0a0]">
-                  <span className="text-[#f0f0f0] font-medium">{item.quantity}×</span> {item.name}
-                </span>
-                <span className="text-[#a0a0a0]">£{(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
-              </div>
-            ))}
+            {displayItems.map((item, i) => {
+              const { name, note } = parseItemNote(item.name)
+              return (
+                <div key={i}>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#a0a0a0]">
+                      <span className="text-[#f0f0f0] font-medium">{item.quantity}×</span> {name}
+                    </span>
+                    <span className="text-[#a0a0a0]">£{(Number(item.price) * Number(item.quantity)).toFixed(2)}</span>
+                  </div>
+                  {note && <p className="text-[11px] text-amber-400/90 pl-1">* {note}</p>}
+                </div>
+              )
+            })}
             {extraCount > 0 && (
               <p className="text-xs text-[#555]">+{extraCount} more item{extraCount > 1 ? 's' : ''}</p>
             )}
