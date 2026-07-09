@@ -443,8 +443,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     csItems.querySelectorAll('.ci-note-input').forEach(ta => {
       const entry = cart.find(c => c.cartKey === ta.dataset.key);
-      ta.addEventListener('input', () => { if (entry) entry.note = ta.value; });
-      ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault(); });
+      // This note gets embedded as "[Note: ...]" inside the item's name for the
+      // receipt printer to extract with a regex whose "." can't span a newline —
+      // a line break here breaks that extraction entirely (not just the note,
+      // the whole customisation block), so this field must stay single-line.
+      ta.addEventListener('input', () => { if (entry) entry.note = ta.value.replace(/[\r\n]+/g, ' '); });
+      ta.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
     });
 
     updateOrderSummaryMini();
@@ -1085,7 +1089,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const scRegDisplay   = document.getElementById('scRegDisplay');
 
   function sanitiseText(val) {
-    return (val || '').replace(/<[^>]*>/g, '').trim();
+    // Collapsing all whitespace (including newlines) is required, not just
+    // cosmetic: per-item notes get embedded as a trailing "[Note: ...]" in
+    // the item name for the receipt printer to pull back out with a regex
+    // whose "." can't span a line break — an embedded newline breaks that
+    // extraction entirely (and, as a knock-on effect, the item's own
+    // style/add-ons/meal block too), not just the note.
+    return (val || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
   }
 
   function isValidUKPhone(val) {
