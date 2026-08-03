@@ -27,12 +27,14 @@ const VIRTUAL_CATS = {
 /* ---- Burger customisation data (static — not in DB) ---- */
 const BURGER_ADDONS = [
   { id: 'smash',  name: 'Smash patty',    price: 1.49 },
-  { id: 'fillet', name: 'Chicken fillet', price: 1.00, hasFlavour: true },
+  { id: 'fillet', name: 'Chicken fillet', price: 1.00, hasFlavour: true, flavourPrices: { Normal: 1.00, Nashville: 2.00, Spicy: 1.50 } },
   { id: 'donner', name: 'Donner',         price: 1.49 },
   { id: 'cheese', name: 'Cheese',         price: 0.30 },
 ];
 
-/* Flavour choice for add-ons flagged hasFlavour (currently just Chicken fillet) — no price impact */
+/* Flavour choice for add-ons flagged hasFlavour (currently just Chicken fillet).
+   Price per flavour comes from that addon's flavourPrices map — "price" above
+   is just the fallback/default (Normal). */
 const ADDON_FLAVOURS = ['Normal', 'Nashville', 'Spicy'];
 
 const MEAL_DRINKS = [

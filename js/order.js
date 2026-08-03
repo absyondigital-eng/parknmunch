@@ -143,10 +143,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!c) return base;
     if (c.boxBuilder) {
       const addonsTotal = (c.selections || []).reduce((s, sel) =>
-        s + (sel.addons || []).reduce((s2, a) => s2 + a.price, 0) * (sel.qty || 1), 0);
+        s + (sel.addons || []).reduce((s2, a) => s2 + addonPrice(a), 0) * (sel.qty || 1), 0);
       return base + addonsTotal;
     }
-    const addons = (c.addons || []).reduce((s, a) => s + a.price, 0);
+    const addons = (c.addons || []).reduce((s, a) => s + addonPrice(a), 0);
     const meal   = c.meal ? MEAL_UPGRADE_PRICE : 0;
     return base + addons + meal;
   }
@@ -198,9 +198,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Clones an addon and attaches the selected flavour (Normal/Nashville/Spicy)
   // for addons flagged hasFlavour (currently just Chicken fillet) — never
   // mutates the shared BURGER_ADDONS objects, since those are reused across
-  // every cart entry. No price impact.
+  // every cart entry.
   function withFlavour(addon, flavour) {
     return addon.hasFlavour ? { ...addon, flavour: flavour || ADDON_FLAVOURS[0] } : addon;
+  }
+
+  // Normal/Nashville/Spicy each have their own price for flavoured addons
+  // (currently just Chicken fillet) — addon.price is only the fallback/default.
+  function addonPrice(addon) {
+    if (!addon.flavourPrices) return addon.price;
+    const flavour = addon.flavour || ADDON_FLAVOURS[0];
+    return addon.flavourPrices[flavour] ?? addon.price;
   }
 
   // "Chicken fillet - Nashville" — a hyphen, not parens, so this stays safe
@@ -502,13 +510,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateModalPrice() {
     if (!modalItem) return;
     let price = modalItem.price;
+    const filletFlavourInput = burgerModalOverlay.querySelector('input[name="bmFilletFlavour"]:checked');
     burgerModalOverlay.querySelectorAll('.bm-addon-cb:checked').forEach(cb => {
       const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
-      if (addon) price += addon.price;
+      if (addon) price += addonPrice(withFlavour(addon, filletFlavourInput?.value));
     });
     const mealToggle = document.getElementById('bmMealToggle');
     if (mealToggle && mealToggle.checked) price += MEAL_UPGRADE_PRICE;
     document.getElementById('bmCurrentPrice').textContent = '£' + price.toFixed(2);
+
+    // Keep the Chicken fillet row's own price label in sync with the selected flavour
+    const filletAddon   = BURGER_ADDONS.find(a => a.id === 'fillet');
+    const filletPriceEl = document.getElementById('bmFilletPrice');
+    if (filletAddon && filletPriceEl) {
+      filletPriceEl.textContent = '+£' + addonPrice(withFlavour(filletAddon, filletFlavourInput?.value)).toFixed(2);
+    }
   }
 
   function openBurgerModal(item) {
@@ -594,6 +610,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('bmFilletFlavourWrap').classList.toggle('visible', bmFilletCb.checked);
       });
     }
+    burgerModalOverlay.querySelectorAll('input[name="bmFilletFlavour"]').forEach(r => {
+      r.addEventListener('change', updateModalPrice);
+    });
 
     // Meal toggle
     const mealToggle  = document.getElementById('bmMealToggle');
@@ -648,11 +667,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateMunchboxPrice() {
     if (!munchboxModalItem) return;
     let price = munchboxModalItem.price;
+    const filletFlavourInput = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]:checked');
     munchboxModalOverlay.querySelectorAll('.mm-addon-cb:checked').forEach(cb => {
       const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
-      if (addon) price += addon.price;
+      if (addon) price += addonPrice(withFlavour(addon, filletFlavourInput?.value));
     });
     document.getElementById('mmCurrentPrice').textContent = '£' + price.toFixed(2);
+
+    // Keep the Chicken fillet row's own price label in sync with the selected flavour
+    const filletAddon   = BURGER_ADDONS.find(a => a.id === 'fillet');
+    const filletPriceEl = document.getElementById('mmFilletPrice');
+    if (filletAddon && filletPriceEl) {
+      filletPriceEl.textContent = '+£' + addonPrice(withFlavour(filletAddon, filletFlavourInput?.value)).toFixed(2);
+    }
   }
 
   function openMunchboxModal(item) {
@@ -697,6 +724,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('mmFilletFlavourWrap').classList.toggle('visible', mmFilletCb.checked);
       });
     }
+    munchboxModalOverlay.querySelectorAll('input[name="mmFilletFlavour"]').forEach(r => {
+      r.addEventListener('change', updateMunchboxPrice);
+    });
 
     document.getElementById('mmSubmit').addEventListener('click', () => {
       const mmFlavourInput = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]:checked');
@@ -915,7 +945,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               <label class="bm-addon-row">
                 <input type="checkbox" class="bb-addon-cb" data-id="${burger.id}" data-addon-id="${a.id}" ${isChecked ? 'checked' : ''}>
                 <span class="bm-addon-name">${a.name}</span>
-                <span class="bm-addon-price">+£${a.price.toFixed(2)}</span>
+                <span class="bm-addon-price" data-price-for="${burger.id}::${a.id}">+£${addonPrice(existing || a).toFixed(2)}</span>
               </label>
               ${flavourRow}`;
           }).join('')}
@@ -1005,7 +1035,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const [, burgerId, addonId] = radio.name.split('::');
         const sel = bbSelections.find(s => s.item.id === burgerId);
         const addon = sel?.addons.find(a => a.id === addonId);
-        if (addon) addon.flavour = radio.value;
+        if (!addon) return;
+        addon.flavour = radio.value;
+        const priceEl = bbBody.querySelector(`[data-price-for="${burgerId}::${addonId}"]`);
+        if (priceEl) priceEl.textContent = '+£' + addonPrice(addon).toFixed(2);
       });
     });
   }
