@@ -982,6 +982,48 @@
   cursor: pointer;
 }
 
+/* Add-on flavour picker (e.g. Chicken fillet: Normal / Nashville / Spicy) */
+.flavour-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px 34px;
+  margin: -4px 0 2px;
+}
+.flavour-wrap.visible { display: flex; }
+
+.flavour-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+}
+
+.flavour-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.flavour-opt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.03);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.flavour-opt:has(input:checked) {
+  border-color: var(--purple-border);
+  color: var(--purple-light);
+  background: var(--purple-dim);
+}
+.flavour-opt input { display: none; }
+
 .bm-drink-error {
   display: none;
   font-size: 0.75rem;

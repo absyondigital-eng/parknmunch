@@ -116,17 +116,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     return MENU.filter(i => i.category === category);
   }
 
+  // Includes flavour so e.g. a Nashville fillet and a Spicy fillet on the
+  // same burger don't collapse into one cart line via a shared cartKey.
+  function addonKeyPart(a) {
+    return a.id + (a.flavour ? ':' + a.flavour : '');
+  }
+
   function makeCartKey(item, customisation) {
     if (!customisation) return `${item.id}_plain`;
     if (customisation.boxBuilder) {
       const selStr = customisation.selections
-        .map(s => `${s.item.id}:${s.qty}:${s.style || ''}:${(s.addons || []).map(a => a.id).sort().join(',')}`)
+        .map(s => `${s.item.id}:${s.qty}:${s.style || ''}:${(s.addons || []).map(addonKeyPart).sort().join(',')}`)
         .sort()
         .join('|');
       return `${item.id}_box_${selStr}_${customisation.drink || ''}`;
     }
     if (customisation.drink) return `${item.id}_${customisation.drink}`;
-    const addonStr = (customisation.addons || []).map(a => a.id).sort().join(',');
+    const addonStr = (customisation.addons || []).map(addonKeyPart).sort().join(',');
     const styleStr = customisation.style || 'plain';
     return `${item.id}_${styleStr}_${addonStr}_${customisation.meal || ''}`;
   }
@@ -156,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const lines = customisation.selections.map(sel => {
         const bits = [];
         if (sel.style) bits.push(sel.style);
-        if (sel.addons && sel.addons.length) bits.push(sel.addons.map(a => a.name).join(', '));
+        if (sel.addons && sel.addons.length) bits.push(sel.addons.map(a => addonDisplayName(a)).join(', '));
         const tag = bits.length ? ` <span class="cc-tag">${bits.join(' · ')}</span>` : '';
         return `<div class="ci-custom-line">${sel.qty > 1 ? sel.qty + '× ' : ''}${sel.item.name}${tag}</div>`;
       });
@@ -169,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       lines.push(`<div class="ci-custom-line"><span class="cc-tag">${customisation.style}</span></div>`);
     }
     if (customisation.addons && customisation.addons.length) {
-      lines.push(`<div class="ci-custom-line">+ ${customisation.addons.map(a => a.name).join(', ')}</div>`);
+      lines.push(`<div class="ci-custom-line">+ ${customisation.addons.map(a => addonDisplayName(a)).join(', ')}</div>`);
     }
     if (customisation.meal) {
       lines.push(`<div class="ci-custom-line">Meal · ${customisation.meal}</div>`);
@@ -189,6 +195,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     return String(s).replace(/[()]/g, '');
   }
 
+  // Clones an addon and attaches the selected flavour (Normal/Nashville/Spicy)
+  // for addons flagged hasFlavour (currently just Chicken fillet) — never
+  // mutates the shared BURGER_ADDONS objects, since those are reused across
+  // every cart entry. No price impact.
+  function withFlavour(addon, flavour) {
+    return addon.hasFlavour ? { ...addon, flavour: flavour || ADDON_FLAVOURS[0] } : addon;
+  }
+
+  // "Chicken fillet - Nashville" — a hyphen, not parens, so this stays safe
+  // to embed inside buildItemName's own wrapping parens (see stripParens above).
+  function addonDisplayName(addon) {
+    return addon.flavour ? `${addon.name} - ${addon.flavour}` : addon.name;
+  }
+
   function buildItemName(entry) {
     const { item, customisation } = entry;
     if (!customisation) return item.name;
@@ -204,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const parts = customisation.selections.map(sel => {
         const bits = [];
         if (sel.style)                    bits.push(stripParens(sel.style));
-        if (sel.addons && sel.addons.length) bits.push(...sel.addons.map(a => stripParens(a.name)));
+        if (sel.addons && sel.addons.length) bits.push(...sel.addons.map(a => stripParens(addonDisplayName(a))));
         const qtyPrefix = sel.qty > 1 ? `${sel.qty}x ` : '';
         return bits.length ? `${qtyPrefix}${sel.item.name} + ${bits.join(' + ')}` : `${qtyPrefix}${sel.item.name}`;
       });
@@ -214,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (customisation.drink)  return `${item.name} - ${customisation.drink}`;
     const parts = [];
     if (customisation.style)          parts.push(stripParens(customisation.style));
-    if (customisation.addons?.length) parts.push(customisation.addons.map(a => stripParens(a.name)).join(', '));
+    if (customisation.addons?.length) parts.push(customisation.addons.map(a => stripParens(addonDisplayName(a))).join(', '));
     if (customisation.meal)           parts.push(`Meal: ${stripParens(customisation.meal)}`);
     return parts.length ? `${item.name} (${parts.join(' · ')})` : item.name;
   }
@@ -506,6 +526,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     burgerModalOverlay.querySelectorAll('input[name="bmStyle"]').forEach(r => r.checked = false);
     // Reset addon checkboxes
     burgerModalOverlay.querySelectorAll('.bm-addon-cb').forEach(c => c.checked = false);
+    // Reset fillet flavour picker
+    document.getElementById('bmFilletFlavourWrap').classList.remove('visible');
+    const bmFirstFlavour = burgerModalOverlay.querySelector('input[name="bmFilletFlavour"]');
+    if (bmFirstFlavour) bmFirstFlavour.checked = true;
     // Reset meal toggle
     const mealToggle = document.getElementById('bmMealToggle');
     mealToggle.checked = false;
@@ -563,6 +587,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       cb.addEventListener('change', updateModalPrice);
     });
 
+    // Fillet flavour picker shows only while Chicken fillet is checked
+    const bmFilletCb = burgerModalOverlay.querySelector('.bm-addon-cb[data-addon-id="fillet"]');
+    if (bmFilletCb) {
+      bmFilletCb.addEventListener('change', () => {
+        document.getElementById('bmFilletFlavourWrap').classList.toggle('visible', bmFilletCb.checked);
+      });
+    }
+
     // Meal toggle
     const mealToggle  = document.getElementById('bmMealToggle');
     const mealRow     = document.getElementById('bmMealRow');
@@ -591,9 +623,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      const bmFlavourInput = burgerModalOverlay.querySelector('input[name="bmFilletFlavour"]:checked');
       const checkedAddons = [...burgerModalOverlay.querySelectorAll('.bm-addon-cb:checked')]
         .map(cb => BURGER_ADDONS.find(a => a.id === cb.dataset.addonId))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(a => withFlavour(a, bmFlavourInput?.value));
 
       const customisation = {
         style:  styleInput ? styleInput.value : null,
@@ -627,6 +661,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('mmItemDesc').textContent  = item.desc || '';
     document.getElementById('mmBasePrice').textContent = '£' + item.price.toFixed(2);
     munchboxModalOverlay.querySelectorAll('.mm-addon-cb').forEach(c => c.checked = false);
+    document.getElementById('mmFilletFlavourWrap').classList.remove('visible');
+    const mmFirstFlavour = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]');
+    if (mmFirstFlavour) mmFirstFlavour.checked = true;
     const mmNoteEl = document.getElementById('mmNote');
     if (mmNoteEl) mmNoteEl.value = '';
     updateMunchboxPrice();
@@ -653,10 +690,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       cb.addEventListener('change', updateMunchboxPrice);
     });
 
+    // Fillet flavour picker shows only while Chicken fillet is checked
+    const mmFilletCb = munchboxModalOverlay.querySelector('.mm-addon-cb[data-addon-id="fillet"]');
+    if (mmFilletCb) {
+      mmFilletCb.addEventListener('change', () => {
+        document.getElementById('mmFilletFlavourWrap').classList.toggle('visible', mmFilletCb.checked);
+      });
+    }
+
     document.getElementById('mmSubmit').addEventListener('click', () => {
+      const mmFlavourInput = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]:checked');
       const checkedAddons = [...munchboxModalOverlay.querySelectorAll('.mm-addon-cb:checked')]
         .map(cb => BURGER_ADDONS.find(a => a.id === cb.dataset.addonId))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(a => withFlavour(a, mmFlavourInput?.value));
 
       const customisation = checkedAddons.length > 0
         ? { style: null, addons: checkedAddons, meal: null }
@@ -850,12 +897,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const addonsHtml = qty > 0 ? `
         <div class="gm-card-addons">
-          ${BURGER_ADDONS.map(a => `
-            <label class="bm-addon-row">
-              <input type="checkbox" class="bb-addon-cb" data-id="${burger.id}" data-addon-id="${a.id}" ${addons.some(x => x.id === a.id) ? 'checked' : ''}>
-              <span class="bm-addon-name">${a.name}</span>
-              <span class="bm-addon-price">+£${a.price.toFixed(2)}</span>
-            </label>`).join('')}
+          ${BURGER_ADDONS.map(a => {
+            const existing   = addons.find(x => x.id === a.id);
+            const isChecked  = Boolean(existing);
+            const flavourRow = a.hasFlavour ? `
+              <div class="flavour-wrap${isChecked ? ' visible' : ''}" data-flavour-for="${burger.id}::${a.id}">
+                <div class="flavour-label">Fillet flavour</div>
+                <div class="flavour-chips">
+                  ${ADDON_FLAVOURS.map(f => `
+                    <label class="flavour-opt">
+                      <input type="radio" name="bb-flavour::${burger.id}::${a.id}" value="${f}" ${(existing?.flavour || ADDON_FLAVOURS[0]) === f ? 'checked' : ''}>
+                      ${f}
+                    </label>`).join('')}
+                </div>
+              </div>` : '';
+            return `
+              <label class="bm-addon-row">
+                <input type="checkbox" class="bb-addon-cb" data-id="${burger.id}" data-addon-id="${a.id}" ${isChecked ? 'checked' : ''}>
+                <span class="bm-addon-name">${a.name}</span>
+                <span class="bm-addon-price">+£${a.price.toFixed(2)}</span>
+              </label>
+              ${flavourRow}`;
+          }).join('')}
         </div>` : '';
 
       return `
@@ -926,10 +989,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
         if (!addon) return;
         if (cb.checked) {
-          if (!sel.addons.some(a => a.id === addon.id)) sel.addons.push(addon);
+          if (!sel.addons.some(a => a.id === addon.id)) sel.addons.push(withFlavour(addon, ADDON_FLAVOURS[0]));
         } else {
           sel.addons = sel.addons.filter(a => a.id !== addon.id);
         }
+        if (addon.hasFlavour) {
+          const wrap = bbBody.querySelector(`[data-flavour-for="${id}::${addon.id}"]`);
+          if (wrap) wrap.classList.toggle('visible', cb.checked);
+        }
+      });
+    });
+
+    bbBody.querySelectorAll('input[type="radio"][name^="bb-flavour::"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const [, burgerId, addonId] = radio.name.split('::');
+        const sel = bbSelections.find(s => s.item.id === burgerId);
+        const addon = sel?.addons.find(a => a.id === addonId);
+        if (addon) addon.flavour = radio.value;
       });
     });
   }
