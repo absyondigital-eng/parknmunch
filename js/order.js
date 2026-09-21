@@ -20,7 +20,7 @@ function applyClosedState() {
         bannerSub.textContent   = "We'll be back soon — please check back later.";
       } else {
         bannerTitle.textContent = "We're currently closed";
-        bannerSub.textContent   = 'Open Tue–Thu 4pm–1am · Sun, Fri & Sat 4pm–2am · Closed Mondays';
+        bannerSub.textContent   = 'Open Mon–Thu 4pm–12am · Fri & Sat 4pm–2am · Sun 4pm–1am';
       }
     }
   }

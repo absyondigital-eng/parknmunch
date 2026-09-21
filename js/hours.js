@@ -1,12 +1,12 @@
 // Opening hours for Park N Munch (index 0 = Sunday … 6 = Saturday)
 // close > 24 means the session runs into the early hours of the NEXT calendar day
-// e.g. close: 26 = 2 am the following morning
+// e.g. close: 26 = 2 am the following morning; close: 24 = midnight (same calendar day)
 const OPENING_HOURS = [
-  { open: 16, close: 26 }, // Sunday    4 pm – 2 am
-  null,                     // Monday    Closed
-  { open: 16, close: 25 }, // Tuesday   4 pm – 1 am
-  { open: 16, close: 25 }, // Wednesday 4 pm – 1 am
-  { open: 16, close: 25 }, // Thursday  4 pm – 1 am
+  { open: 16, close: 25 }, // Sunday    4 pm – 1 am
+  { open: 16, close: 24 }, // Monday    4 pm – 12 am
+  { open: 16, close: 24 }, // Tuesday   4 pm – 12 am
+  { open: 16, close: 24 }, // Wednesday 4 pm – 12 am
+  { open: 16, close: 24 }, // Thursday  4 pm – 12 am
   { open: 16, close: 26 }, // Friday    4 pm – 2 am
   { open: 16, close: 26 }, // Saturday  4 pm – 2 am
 ];
