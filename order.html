@@ -558,6 +558,70 @@
     </div><!-- /burger-modal-card -->
   </div><!-- /munchboxModalOverlay -->
 
+  <!-- ============================================================
+       WRAP CUSTOMISATION MODAL — meal upgrade only
+       ============================================================ -->
+  <div class="burger-modal-overlay" id="wrapModalOverlay" role="dialog" aria-modal="true" aria-labelledby="wmItemName">
+    <div class="burger-modal-card">
+
+      <!-- Header -->
+      <div class="bm-header">
+        <div>
+          <div class="bm-title" id="wmItemName">Wrap</div>
+          <div class="bm-desc" id="wmItemDesc"></div>
+        </div>
+        <div class="bm-header-right">
+          <div class="bm-current-price" id="wmCurrentPrice">£0.00</div>
+          <button class="bm-close" id="wmClose" aria-label="Close modal">✕</button>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="bm-body">
+
+        <!-- Make it a Meal -->
+        <div>
+          <div class="bm-section-label">Make it a Meal</div>
+          <label class="bm-meal-row" id="wmMealRow">
+            <div class="bm-meal-text-wrap">
+              <div class="bm-meal-title">🍟 Add fries &amp; a drink</div>
+              <div class="bm-meal-upsell">+£2.50</div>
+            </div>
+            <div class="bm-toggle">
+              <input type="checkbox" id="wmMealToggle">
+              <div class="bm-toggle-track"></div>
+              <div class="bm-toggle-thumb"></div>
+            </div>
+          </label>
+          <div class="bm-drinks-wrap" id="wmDrinksWrap">
+            <div class="bm-drinks-heading">Choose your drink:</div>
+            <div id="wmDrinksList"></div>
+            <div class="bm-drink-error" id="wmDrinkError">⚠ Please select a drink</div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="bm-section-label" for="wmNote">
+            Add notes
+            <span style="font-size:0.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:rgba(255,255,255,0.3)">- optional</span>
+          </label>
+          <textarea id="wmNote" class="bm-note-input"
+            placeholder="Any special requests for your wrap…"
+            rows="2"></textarea>
+        </div>
+
+      </div><!-- /bm-body -->
+
+      <!-- Footer -->
+      <div class="bm-footer">
+        <div class="bm-base-note">Base price: <span id="wmBasePrice">£0.00</span></div>
+        <button class="bm-submit" id="wmSubmit">Add to Cart →</button>
+      </div>
+
+    </div><!-- /burger-modal-card -->
+  </div><!-- /wrapModalOverlay -->
+
 
   <!-- ============================================================
        CANS DRINK SELECTION MODAL

@@ -303,6 +303,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           openCansModal(item);
         } else if (item.category === 'box-deals') {
           openMunchboxModal(item);
+        } else if (item.category === 'wraps') {
+          openWrapModal(item);
         } else {
           addToCart(item, null, btn);
         }
@@ -742,6 +744,89 @@ document.addEventListener('DOMContentLoaded', async () => {
       const note = (document.getElementById('mmNote')?.value || '').trim();
       addToCart(munchboxModalItem, customisation, null, note);
       closeMunchboxModal();
+    });
+  }
+
+  /* ---- WRAP CUSTOMISATION MODAL (meal upgrade only) ---- */
+  const wrapModalOverlay = document.getElementById('wrapModalOverlay');
+  let wrapModalItem = null;
+
+  function updateWrapPrice() {
+    if (!wrapModalItem) return;
+    let price = wrapModalItem.price;
+    const mealToggle = document.getElementById('wmMealToggle');
+    if (mealToggle && mealToggle.checked) price += MEAL_UPGRADE_PRICE;
+    document.getElementById('wmCurrentPrice').textContent = '£' + price.toFixed(2);
+  }
+
+  function openWrapModal(item) {
+    wrapModalItem = item;
+    document.getElementById('wmItemName').textContent  = item.name;
+    document.getElementById('wmItemDesc').textContent  = item.desc || '';
+    document.getElementById('wmBasePrice').textContent = '£' + item.price.toFixed(2);
+
+    const mealToggle = document.getElementById('wmMealToggle');
+    mealToggle.checked = false;
+    document.getElementById('wmDrinksWrap').classList.remove('visible');
+    document.getElementById('wmMealRow').classList.remove('active');
+    const firstDrink = wrapModalOverlay.querySelector('input[name="wmDrink"]');
+    if (firstDrink) firstDrink.checked = true;
+    document.getElementById('wmDrinkError').classList.remove('show');
+
+    const wmNoteEl = document.getElementById('wmNote');
+    if (wmNoteEl) wmNoteEl.value = '';
+
+    updateWrapPrice();
+    wrapModalOverlay.classList.add('open');
+    document.body.classList.add('modal-active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeWrapModal() {
+    wrapModalOverlay.classList.remove('open');
+    document.body.classList.remove('modal-active');
+    document.body.style.overflow = '';
+    wrapModalItem = null;
+  }
+
+  if (wrapModalOverlay) {
+    const wmDrinksList = document.getElementById('wmDrinksList');
+    wmDrinksList.innerHTML = MEAL_DRINKS.map((d, i) => `
+      <label class="bm-drink-row">
+        <input type="radio" name="wmDrink" value="${d}" ${i === 0 ? 'checked' : ''}>
+        ${d}
+      </label>`).join('');
+
+    wrapModalOverlay.addEventListener('click', e => {
+      if (e.target === wrapModalOverlay) closeWrapModal();
+    });
+
+    document.getElementById('wmClose').addEventListener('click', closeWrapModal);
+
+    const wmMealToggle = document.getElementById('wmMealToggle');
+    const wmMealRow     = document.getElementById('wmMealRow');
+    const wmDrinksWrap  = document.getElementById('wmDrinksWrap');
+
+    wmMealToggle.addEventListener('change', () => {
+      wmDrinksWrap.classList.toggle('visible', wmMealToggle.checked);
+      wmMealRow.classList.toggle('active', wmMealToggle.checked);
+      document.getElementById('wmDrinkError').classList.remove('show');
+      updateWrapPrice();
+    });
+
+    document.getElementById('wmSubmit').addEventListener('click', () => {
+      const mealOn     = wmMealToggle.checked;
+      const drinkInput = wrapModalOverlay.querySelector('input[name="wmDrink"]:checked');
+      if (mealOn && !drinkInput) {
+        document.getElementById('wmDrinkError').classList.add('show');
+        return;
+      }
+
+      const customisation = mealOn ? { meal: drinkInput.value } : null;
+
+      const note = (document.getElementById('wmNote')?.value || '').trim();
+      addToCart(wrapModalItem, customisation, null, note);
+      closeWrapModal();
     });
   }
 
