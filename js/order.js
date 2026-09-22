@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (customisation.drink) return `${item.id}_${customisation.drink}`;
     const addonStr = (customisation.addons || []).map(addonKeyPart).sort().join(',');
     const styleStr = customisation.style || 'plain';
-    return `${item.id}_${styleStr}_${addonStr}_${customisation.meal || ''}_${customisation.friesUpgrade ? 'fries' : ''}`;
+    return `${item.id}_${styleStr}_${addonStr}_${customisation.meal || ''}`;
   }
 
   function entryPrice(entry) {
@@ -148,8 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const addons = (c.addons || []).reduce((s, a) => s + addonPrice(a), 0);
     const meal   = c.meal ? MEAL_UPGRADE_PRICE : 0;
-    const fries  = c.friesUpgrade ? FRIES_UPGRADE_PRICE : 0;
-    return base + addons + meal + fries;
+    return base + addons + meal;
   }
 
   function buildCustomLines(customisation) {
@@ -180,9 +179,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (customisation.meal) {
       lines.push(`<div class="ci-custom-line">Meal · ${customisation.meal}</div>`);
-    }
-    if (customisation.friesUpgrade) {
-      lines.push(`<div class="ci-custom-line">Upgrade · ${FRIES_UPGRADE_LABEL}</div>`);
     }
     return lines.join('');
   }
@@ -248,7 +244,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (customisation.style)          parts.push(stripParens(customisation.style));
     if (customisation.addons?.length) parts.push(customisation.addons.map(a => stripParens(addonDisplayName(a))).join(', '));
     if (customisation.meal)           parts.push(`Meal: ${stripParens(customisation.meal)}`);
-    if (customisation.friesUpgrade)   parts.push(`Upgrade: ${FRIES_UPGRADE_LABEL}`);
     return parts.length ? `${item.name} (${parts.join(' · ')})` : item.name;
   }
 
@@ -677,8 +672,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const addon = BURGER_ADDONS.find(a => a.id === cb.dataset.addonId);
       if (addon) price += addonPrice(withFlavour(addon, filletFlavourInput?.value));
     });
-    const mmFriesCb = document.getElementById('mmFriesUpgradeCb');
-    if (mmFriesCb && mmFriesCb.checked) price += FRIES_UPGRADE_PRICE;
     document.getElementById('mmCurrentPrice').textContent = '£' + price.toFixed(2);
 
     // Keep the Chicken fillet row's own price label in sync with the selected flavour
@@ -698,10 +691,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('mmFilletFlavourWrap').classList.remove('visible');
     const mmFirstFlavour = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]');
     if (mmFirstFlavour) mmFirstFlavour.checked = true;
-    const mmFriesWrap = document.getElementById('mmFriesUpgradeWrap');
-    const mmFriesCb   = document.getElementById('mmFriesUpgradeCb');
-    if (mmFriesWrap) mmFriesWrap.style.display = item.friesUpgrade ? '' : 'none';
-    if (mmFriesCb)   mmFriesCb.checked = false;
     const mmNoteEl = document.getElementById('mmNote');
     if (mmNoteEl) mmNoteEl.value = '';
     updateMunchboxPrice();
@@ -739,21 +728,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       r.addEventListener('change', updateMunchboxPrice);
     });
 
-    const mmFriesUpgradeCbEl = document.getElementById('mmFriesUpgradeCb');
-    if (mmFriesUpgradeCbEl) {
-      mmFriesUpgradeCbEl.addEventListener('change', updateMunchboxPrice);
-    }
-
     document.getElementById('mmSubmit').addEventListener('click', () => {
       const mmFlavourInput = munchboxModalOverlay.querySelector('input[name="mmFilletFlavour"]:checked');
       const checkedAddons = [...munchboxModalOverlay.querySelectorAll('.mm-addon-cb:checked')]
         .map(cb => BURGER_ADDONS.find(a => a.id === cb.dataset.addonId))
         .filter(Boolean)
         .map(a => withFlavour(a, mmFlavourInput?.value));
-      const friesUpgrade = Boolean(document.getElementById('mmFriesUpgradeCb')?.checked);
 
-      const customisation = (checkedAddons.length > 0 || friesUpgrade)
-        ? { style: null, addons: checkedAddons, meal: null, friesUpgrade }
+      const customisation = checkedAddons.length > 0
+        ? { style: null, addons: checkedAddons, meal: null }
         : null;
 
       const note = (document.getElementById('mmNote')?.value || '').trim();

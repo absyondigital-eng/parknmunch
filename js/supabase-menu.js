@@ -35,7 +35,6 @@
       boxBuilderCount: Number(mods.boxBuilderCount) || 1,
       boxBuilderDrink: Boolean(mods.boxBuilderDrink),
       hasDrinkChoice: Boolean(mods.hasDrinkChoice),
-      friesUpgrade:   Boolean(mods.friesUpgrade),
       popular:        Boolean(p.popular),
       newItem:        Boolean(p.new_item),
       sort_order:     p.sort_order || 0,

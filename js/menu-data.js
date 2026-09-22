@@ -57,12 +57,6 @@ const CANS_DRINKS = [
 
 const MEAL_UPGRADE_PRICE = 2.50;
 
-/* Box Deals fries upgrade — offered only on items whose DB row has
-   modifiers.friesUpgrade: true (Full Throttle / Burnout Beef / Powerhouse
-   Deluxe come standard with Stir Fry Donner fries; this swaps to Nashville). */
-const FRIES_UPGRADE_LABEL = 'Nashville Chicken Loaded Fries';
-const FRIES_UPGRADE_PRICE = 1.50;
-
 /* ---- Populated at runtime by supabase-menu.js ---- */
 let MENU         = [];
 let POPULAR_IDS  = [];
