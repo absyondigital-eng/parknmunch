@@ -29,7 +29,7 @@ const BURGER_ADDONS = [
   { id: 'smash',  name: 'Smash patty',    price: 1.49 },
   { id: 'fillet', name: 'Chicken fillet', price: 1.00, hasFlavour: true, flavourPrices: { Normal: 1.00, Nashville: 2.00, Spicy: 1.50 } },
   { id: 'donner', name: 'Donner',         price: 1.49 },
-  { id: 'cheese', name: 'Cheese',         price: 0.30 },
+  { id: 'cheese', name: 'Cheese',         price: 0.50 },
 ];
 
 /* Flavour choice for add-ons flagged hasFlavour (currently just Chicken fillet).
@@ -43,6 +43,7 @@ const MEAL_DRINKS = [
   'Sprite',
   'Irn Bru',
   'Rubicon Mango',
+  'Water',
 ];
 
 const CANS_DRINKS = [
@@ -51,9 +52,16 @@ const CANS_DRINKS = [
   'Sprite',
   'Irn Bru',
   'Rubicon Mango',
+  'Water',
 ];
 
-const MEAL_UPGRADE_PRICE = 1.50;
+const MEAL_UPGRADE_PRICE = 2.50;
+
+/* Box Deals fries upgrade — offered only on items whose DB row has
+   modifiers.friesUpgrade: true (Full Throttle / Burnout Beef / Powerhouse
+   Deluxe come standard with Stir Fry Donner fries; this swaps to Nashville). */
+const FRIES_UPGRADE_LABEL = 'Nashville Chicken Loaded Fries';
+const FRIES_UPGRADE_PRICE = 1.50;
 
 /* ---- Populated at runtime by supabase-menu.js ---- */
 let MENU         = [];
